@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -41,6 +42,31 @@ namespace ApiContractGenerator
             }
         }
 
+        private void WriteNameAndGenericSignature(IMetadataType type)
+        {
+            var genericParameters = type.GenericTypeParameters;
+            if (genericParameters.Count == 0)
+            {
+                writer.Write(type.Name);
+            }
+            else
+            {
+                var genericSuffixIndex = type.Name.LastIndexOf('`');
+                var buffer = new char[genericSuffixIndex];
+                type.Name.CopyTo(0, buffer, 0, buffer.Length);
+                writer.Write(buffer);
+                writer.Write('<');
+
+                for (var i = 0; i < genericParameters.Count; i++)
+                {
+                    if (i != 0) writer.Write(", ");
+                    writer.Write(genericParameters[i].Name);
+                }
+
+                writer.Write('>');
+            }
+        }
+
         public void Visit(IMetadataClass metadataClass)
         {
             WriteVisibility(metadataClass.Visibility);
@@ -53,7 +79,8 @@ namespace ApiContractGenerator
                 writer.Write("sealed ");
 
             writer.Write("class ");
-            writer.WriteLine(metadataClass.Name);
+            WriteNameAndGenericSignature(metadataClass);
+            writer.WriteLine();
             writer.WriteLine('{');
             writer.Indent();
 
@@ -67,7 +94,8 @@ namespace ApiContractGenerator
         {
             WriteVisibility(metadataStruct.Visibility);
             writer.Write("struct ");
-            writer.WriteLine(metadataStruct.Name);
+            WriteNameAndGenericSignature(metadataStruct);
+            writer.WriteLine();
             writer.WriteLine('{');
             writer.Indent();
 
@@ -81,7 +109,8 @@ namespace ApiContractGenerator
         {
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
-            writer.WriteLine(metadataInterface.Name);
+            WriteNameAndGenericSignature(metadataInterface);
+            writer.WriteLine();
             writer.WriteLine('{');
             writer.Indent();
 
@@ -95,7 +124,7 @@ namespace ApiContractGenerator
         {
             WriteVisibility(metadataEnum.Visibility);
             writer.Write("enum ");
-            writer.Write(metadataEnum.Name);
+            WriteNameAndGenericSignature(metadataEnum);
             writer.Write(" : ");
             Write(metadataEnum.UnderlyingType);
             writer.WriteLine();
@@ -115,7 +144,7 @@ namespace ApiContractGenerator
             writer.Write("delegate ");
             Write(metadataDelegate.ReturnType);
             writer.Write(' ');
-            writer.Write(metadataDelegate.Name);
+            WriteNameAndGenericSignature(metadataDelegate);
 
             writer.WriteLine(';');
         }

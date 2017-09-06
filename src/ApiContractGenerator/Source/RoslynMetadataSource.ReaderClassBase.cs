@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
@@ -20,7 +22,7 @@ namespace ApiContractGenerator.Source
                 this.parentGenericContext = parentGenericContext;
             }
 
-            private GenericContext? genericContext;
+            private GenericContext genericContext;
             protected GenericContext GenericContext
             {
                 get
@@ -28,15 +30,22 @@ namespace ApiContractGenerator.Source
                     if (genericContext == null)
                     {
                         var genericParameters = Definition.GetGenericParameters();
-                        var childParameters = new GenericParameterTypeReference[genericParameters.Count];
-                        foreach (var handle in genericParameters)
+                        if (genericParameters.Count == 0)
                         {
-                            var genericParameter = Reader.GetGenericParameter(handle);
-                            childParameters[genericParameter.Index] = new GenericParameterTypeReference(Reader.GetString(genericParameter.Name));
+                            genericContext = parentGenericContext;
                         }
-                        genericContext = parentGenericContext.ChildContext(childParameters);
+                        else
+                        {
+                            var childParameters = new GenericParameterTypeReference[genericParameters.Count];
+                            foreach (var handle in genericParameters)
+                            {
+                                var genericParameter = Reader.GetGenericParameter(handle);
+                                childParameters[genericParameter.Index] = new GenericParameterTypeReference(Reader.GetString(genericParameter.Name));
+                            }
+                            genericContext = new GenericContext(parentGenericContext, childParameters);
+                        }
                     }
-                    return genericContext.Value;
+                    return genericContext;
                 }
             }
 
@@ -60,6 +69,11 @@ namespace ApiContractGenerator.Source
                     }
                 }
             }
+
+            public IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters =>
+                GenericContext == null
+                    ? Array.Empty<GenericParameterTypeReference>()
+                    : GenericContext.TypeParameters;
 
             public void Accept(IMetadataVisitor visitor)
             {

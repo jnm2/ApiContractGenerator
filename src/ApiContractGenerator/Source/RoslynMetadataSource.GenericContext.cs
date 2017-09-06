@@ -1,29 +1,29 @@
-using System.Collections.Generic;
-using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
 {
     public sealed partial class RoslynMetadataSource
     {
-        private struct GenericContext
+        private sealed class GenericContext
         {
+            private readonly GenericContext parentContext;
+            private readonly int parentTotalParameterCount;
             public readonly GenericParameterTypeReference[] TypeParameters;
 
-            public GenericContext(GenericParameterTypeReference[] typeParameters)
+            public GenericContext(GenericContext parentContext, GenericParameterTypeReference[] typeParameters)
             {
+                if (parentContext != null)
+                {
+                    this.parentContext = parentContext;
+                    parentTotalParameterCount = parentContext.parentTotalParameterCount + this.parentContext.TypeParameters.Length;
+                }
                 TypeParameters = typeParameters;
             }
 
-            public GenericContext ChildContext(GenericParameterTypeReference[] childParameters)
-            {
-                if (TypeParameters == null) return new GenericContext(childParameters);
-
-                var r = new GenericParameterTypeReference[TypeParameters.Length + childParameters.Length];
-                TypeParameters.CopyTo(r, 0);
-                childParameters.CopyTo(r, TypeParameters.Length);
-                return new GenericContext(r);
-            }
+            public GenericParameterTypeReference this[int absoluteIndex] =>
+                absoluteIndex < parentTotalParameterCount
+                    ? parentContext[absoluteIndex]
+                    : TypeParameters[absoluteIndex - parentTotalParameterCount];
         }
     }
 }

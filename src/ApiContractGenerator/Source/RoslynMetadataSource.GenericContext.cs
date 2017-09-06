@@ -1,3 +1,4 @@
+using System;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
@@ -6,6 +7,8 @@ namespace ApiContractGenerator.Source
     {
         private sealed class GenericContext
         {
+            public static readonly GenericContext Empty = new GenericContext(null, Array.Empty<GenericParameterTypeReference>());
+
             private readonly GenericContext parentContext;
             private readonly int parentTotalParameterCount;
             public readonly GenericParameterTypeReference[] TypeParameters;

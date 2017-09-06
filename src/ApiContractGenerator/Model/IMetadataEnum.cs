@@ -3,7 +3,7 @@ using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator.Model
 {
-    public interface IMetadataEnum : IMetadataType, IMetadataSource
+    public interface IMetadataEnum : IMetadataType
     {
         MetadataTypeReference UnderlyingType { get; }
     }

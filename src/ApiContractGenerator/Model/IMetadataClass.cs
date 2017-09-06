@@ -2,7 +2,7 @@ using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator.Model
 {
-    public interface IMetadataClass : IMetadataType, IMetadataSource
+    public interface IMetadataClass : IMetadataType
     {
         bool IsStatic { get; }
         bool IsAbstract { get; }

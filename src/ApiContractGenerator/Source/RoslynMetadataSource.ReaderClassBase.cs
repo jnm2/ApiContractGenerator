@@ -9,7 +9,7 @@ namespace ApiContractGenerator.Source
 {
     public sealed partial class RoslynMetadataSource
     {
-        private abstract class ReaderClassBase : IMetadataType, IMetadataSource
+        private abstract class ReaderClassBase : IMetadataType
         {
             protected readonly MetadataReader Reader;
             protected readonly TypeDefinition Definition;
@@ -75,20 +75,62 @@ namespace ApiContractGenerator.Source
                     ? Array.Empty<GenericParameterTypeReference>()
                     : GenericContext.TypeParameters;
 
-            public void Accept(IMetadataVisitor visitor)
+            private IReadOnlyList<IMetadataType> nestedTypes;
+            public IReadOnlyList<IMetadataType> NestedTypes
             {
-                foreach (var handle in Definition.GetNestedTypes())
+                get
                 {
-                    var definition = Reader.GetTypeDefinition(handle);
-                    switch (definition.Attributes & TypeAttributes.VisibilityMask)
+                    if (nestedTypes == null)
                     {
-                        case TypeAttributes.NestedPublic:
-                        case TypeAttributes.NestedFamily:
-                        case TypeAttributes.NestedFamORAssem:
-                            Dispatch(Reader, definition, GenericContext, visitor);
-                            break;
+                        var r = new List<IMetadataType>();
+
+                        foreach (var handle in Definition.GetNestedTypes())
+                        {
+                            var definition = Reader.GetTypeDefinition(handle);
+                            switch (definition.Attributes & TypeAttributes.VisibilityMask)
+                            {
+                                case TypeAttributes.NestedPublic:
+                                case TypeAttributes.NestedFamily:
+                                case TypeAttributes.NestedFamORAssem:
+                                     r.Add(Create(Reader, definition, GenericContext));
+                                    break;
+                            }
+                        }
+
+                        nestedTypes = r;
+                    }
+                    return nestedTypes;
+                }
+            }
+
+            public static ReaderClassBase Create(MetadataReader reader, TypeDefinition typeDefinition, GenericContext parentGenericContext)
+            {
+                if ((typeDefinition.Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface)
+                {
+                    return new ReaderInterface(reader, typeDefinition, parentGenericContext);
+                }
+
+                if (typeDefinition.BaseType.Kind == HandleKind.TypeReference)
+                {
+                    var baseType = reader.GetTypeReference((TypeReferenceHandle)typeDefinition.BaseType);
+                    var baseTypeName = reader.GetString(baseType.Name);
+                    var baseTypeNamespace = reader.GetString(baseType.Namespace);
+
+                    if (baseTypeName == "Enum" && baseTypeNamespace == "System")
+                    {
+                        return new ReaderEnum(reader, typeDefinition, parentGenericContext);
+                    }
+                    if (baseTypeName == "ValueType" && baseTypeNamespace == "System")
+                    {
+                        return new ReaderStruct(reader, typeDefinition, parentGenericContext);
+                    }
+                    if (baseTypeName == "MulticastDelegate" && baseTypeNamespace == "System")
+                    {
+                        return new ReaderDelegate(reader, typeDefinition, parentGenericContext);
                     }
                 }
+
+                return new ReaderClass(reader, typeDefinition, parentGenericContext);
             }
         }
     }

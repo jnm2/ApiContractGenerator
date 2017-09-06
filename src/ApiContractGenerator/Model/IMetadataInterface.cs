@@ -2,7 +2,7 @@ using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator.Model
 {
-    public interface IMetadataInterface : IMetadataType, IMetadataSource
+    public interface IMetadataInterface : IMetadataType
     {
     }
 }

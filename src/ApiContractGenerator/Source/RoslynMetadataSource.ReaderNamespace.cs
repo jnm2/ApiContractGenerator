@@ -11,7 +11,8 @@ namespace ApiContractGenerator.Source
             private readonly MetadataReader reader;
             private readonly ReaderNamespace parent;
             private readonly NamespaceDefinition definition;
-            private readonly IReadOnlyList<TypeDefinition> externallyVisibleTypes;
+
+            public IReadOnlyList<IMetadataType> Types { get; }
 
             private string name;
             public string Name
@@ -31,18 +32,12 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            public ReaderNamespace(MetadataReader reader, ReaderNamespace parent, NamespaceDefinition definition, IReadOnlyList<TypeDefinition> externallyVisibleTypes)
+            public ReaderNamespace(MetadataReader reader, ReaderNamespace parent, NamespaceDefinition definition, IReadOnlyList<IMetadataType> types)
             {
                 this.reader = reader;
                 this.parent = parent;
                 this.definition = definition;
-                this.externallyVisibleTypes = externallyVisibleTypes;
-            }
-
-            public void Accept(IMetadataVisitor visitor)
-            {
-                foreach (var type in externallyVisibleTypes)
-                    Dispatch(reader, type, default(GenericContext), visitor);
+                Types = types;
             }
         }
     }

@@ -24,62 +24,39 @@ namespace ApiContractGenerator.Source
             peReader.Dispose();
         }
 
-        public void Accept(IMetadataVisitor visitor)
+        private IReadOnlyList<IMetadataNamespace> namespaces;
+        public IReadOnlyList<IMetadataNamespace> Namespaces
         {
-            VisitNamespace(null, reader.GetNamespaceDefinitionRoot());
-            void VisitNamespace(ReaderNamespace parent, NamespaceDefinition definition)
+            get
             {
-                var externallyVisibleTypes = new List<TypeDefinition>();
-
-                foreach (var handle in definition.TypeDefinitions)
+                if (namespaces == null)
                 {
-                    var typeDefinition = reader.GetTypeDefinition(handle);
-                    if ((typeDefinition.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.Public)
-                        externallyVisibleTypes.Add(typeDefinition);
+                    var r = new List<IMetadataNamespace>();
+
+                    VisitNamespace(null, reader.GetNamespaceDefinitionRoot());
+                    void VisitNamespace(ReaderNamespace parent, NamespaceDefinition definition)
+                    {
+                        var externallyVisibleTypes = new List<ReaderClassBase>();
+
+                        foreach (var handle in definition.TypeDefinitions)
+                        {
+                            var typeDefinition = reader.GetTypeDefinition(handle);
+                            if ((typeDefinition.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.Public)
+                                externallyVisibleTypes.Add(ReaderClassBase.Create(reader, typeDefinition, null));
+                        }
+
+                        var metadataNamespace = new ReaderNamespace(reader, parent, definition, externallyVisibleTypes);
+                        if (externallyVisibleTypes.Count != 0)
+                            r.Add(metadataNamespace);
+
+                        foreach (var handle in definition.NamespaceDefinitions)
+                            VisitNamespace(metadataNamespace, reader.GetNamespaceDefinition(handle));
+                    }
+
+                    namespaces = r;
                 }
-
-                var metadataNamespace = new ReaderNamespace(reader, parent, definition, externallyVisibleTypes);
-                if (externallyVisibleTypes.Count != 0)
-                    visitor.Visit(metadataNamespace);
-
-                foreach (var handle in definition.NamespaceDefinitions)
-                    VisitNamespace(metadataNamespace, reader.GetNamespaceDefinition(handle));
+                return namespaces;
             }
-        }
-
-
-        private static void Dispatch(MetadataReader reader, TypeDefinition typeDefinition, GenericContext parentGenericContext, IMetadataVisitor visitor)
-        {
-            if ((typeDefinition.Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface)
-            {
-                visitor.Visit(new ReaderInterface(reader, typeDefinition, parentGenericContext));
-                return;
-            }
-
-            if (typeDefinition.BaseType.Kind == HandleKind.TypeReference)
-            {
-                var baseType = reader.GetTypeReference((TypeReferenceHandle)typeDefinition.BaseType);
-                var baseTypeName = reader.GetString(baseType.Name);
-                var baseTypeNamespace = reader.GetString(baseType.Namespace);
-
-                if (baseTypeName == "Enum" && baseTypeNamespace == "System")
-                {
-                    visitor.Visit(new ReaderEnum(reader, typeDefinition, parentGenericContext));
-                    return;
-                }
-                if (baseTypeName == "ValueType" && baseTypeNamespace == "System")
-                {
-                    visitor.Visit(new ReaderStruct(reader, typeDefinition, parentGenericContext));
-                    return;
-                }
-                if (baseTypeName == "MulticastDelegate" && baseTypeNamespace == "System")
-                {
-                    visitor.Visit(new ReaderDelegate(reader, typeDefinition, parentGenericContext));
-                    return;
-                }
-            }
-
-            visitor.Visit(new ReaderClass(reader, typeDefinition, parentGenericContext));
         }
     }
 }

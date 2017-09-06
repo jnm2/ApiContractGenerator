@@ -1,8 +1,9 @@
-using ApiContractGenerator.Source;
+using System.Collections.Generic;
 
 namespace ApiContractGenerator.Model
 {
-    public interface IMetadataNamespace : IMetadataSymbol, IMetadataSource
+    public interface IMetadataNamespace : IMetadataSymbol
     {
+        IReadOnlyList<IMetadataType> Types { get; }
     }
 }

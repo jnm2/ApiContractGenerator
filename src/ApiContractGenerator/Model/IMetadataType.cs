@@ -7,5 +7,6 @@ namespace ApiContractGenerator.Model
     {
         MetadataVisibility Visibility { get; }
         IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters { get; }
+        IReadOnlyList<IMetadataType> NestedTypes { get; }
     }
 }

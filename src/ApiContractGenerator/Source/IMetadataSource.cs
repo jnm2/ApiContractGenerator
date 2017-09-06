@@ -1,9 +1,10 @@
+using System.Collections.Generic;
 using ApiContractGenerator.Model;
 
 namespace ApiContractGenerator.Source
 {
     public interface IMetadataSource
     {
-        void Accept(IMetadataVisitor visitor);
+        IReadOnlyList<IMetadataNamespace> Namespaces { get; }
     }
 }

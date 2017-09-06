@@ -1,13 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Xml;
+using System.Linq;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
+using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator
 {
-    public sealed class CSharpTextFormatter : IMetadataVisitor
+    public sealed class CSharpTextFormatter : IMetadataWriter
     {
         private readonly IndentedTextWriter writer;
 
@@ -16,14 +16,21 @@ namespace ApiContractGenerator
             this.writer = new IndentedTextWriter(writer);
         }
 
-        public void Visit(IMetadataNamespace metadataNamespace)
+        public void Write(IMetadataSource metadataSource)
+        {
+            foreach (var metadataNamespace in metadataSource.Namespaces.OrderBy(_ => _.Name))
+                Write(metadataNamespace);
+        }
+
+        public void Write(IMetadataNamespace metadataNamespace)
         {
             writer.Write("namespace ");
             writer.WriteLine(metadataNamespace.Name);
             writer.WriteLine('{');
             writer.Indent();
 
-            metadataNamespace.Accept(this);
+            foreach (var type in metadataNamespace.Types.OrderBy(_ => _.Name))
+                Write(type);
 
             writer.Unindent();
             writer.WriteLine('}');
@@ -67,7 +74,41 @@ namespace ApiContractGenerator
             }
         }
 
-        public void Visit(IMetadataClass metadataClass)
+        private void WriteTypeMembers(IMetadataType metadataType)
+        {
+            writer.WriteLine('{');
+            writer.Indent();
+
+            foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))
+                Write(nestedType);
+
+            writer.Unindent();
+            writer.WriteLine('}');
+        }
+
+        public void Write(IMetadataType metadataType)
+        {
+            switch (metadataType)
+            {
+                case IMetadataClass metadataClass:
+                    Write(metadataClass);
+                    break;
+                case IMetadataStruct metadataStruct:
+                    Write(metadataStruct);
+                    break;
+                case IMetadataEnum metadataEnum:
+                    Write(metadataEnum);
+                    break;
+                case IMetadataDelegate metadataDelegate:
+                    Write(metadataDelegate);
+                    break;
+                case IMetadataInterface metadataInterface:
+                    Write(metadataInterface);
+                    break;
+            }
+        }
+
+        public void Write(IMetadataClass metadataClass)
         {
             WriteVisibility(metadataClass.Visibility);
 
@@ -81,46 +122,28 @@ namespace ApiContractGenerator
             writer.Write("class ");
             WriteNameAndGenericSignature(metadataClass);
             writer.WriteLine();
-            writer.WriteLine('{');
-            writer.Indent();
-
-            metadataClass.Accept(this);
-
-            writer.Unindent();
-            writer.WriteLine('}');
+            WriteTypeMembers(metadataClass);
         }
 
-        public void Visit(IMetadataStruct metadataStruct)
+        public void Write(IMetadataStruct metadataStruct)
         {
             WriteVisibility(metadataStruct.Visibility);
             writer.Write("struct ");
             WriteNameAndGenericSignature(metadataStruct);
             writer.WriteLine();
-            writer.WriteLine('{');
-            writer.Indent();
-
-            metadataStruct.Accept(this);
-
-            writer.Unindent();
-            writer.WriteLine('}');
+            WriteTypeMembers(metadataStruct);
         }
 
-        public void Visit(IMetadataInterface metadataInterface)
+        public void Write(IMetadataInterface metadataInterface)
         {
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
             WriteNameAndGenericSignature(metadataInterface);
             writer.WriteLine();
-            writer.WriteLine('{');
-            writer.Indent();
-
-            metadataInterface.Accept(this);
-
-            writer.Unindent();
-            writer.WriteLine('}');
+            WriteTypeMembers(metadataInterface);
         }
 
-        public void Visit(IMetadataEnum metadataEnum)
+        public void Write(IMetadataEnum metadataEnum)
         {
             WriteVisibility(metadataEnum.Visibility);
             writer.Write("enum ");
@@ -128,17 +151,10 @@ namespace ApiContractGenerator
             writer.Write(" : ");
             Write(metadataEnum.UnderlyingType);
             writer.WriteLine();
-            writer.WriteLine('{');
-            writer.Indent();
-
-            metadataEnum.Accept(this);
-
-            writer.Unindent();
-            writer.WriteLine('}');
-
+            WriteTypeMembers(metadataEnum);
         }
 
-        public void Visit(IMetadataDelegate metadataDelegate)
+        public void Write(IMetadataDelegate metadataDelegate)
         {
             WriteVisibility(metadataDelegate.Visibility);
             writer.Write("delegate ");

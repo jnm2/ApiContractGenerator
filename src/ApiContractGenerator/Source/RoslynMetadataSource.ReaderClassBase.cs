@@ -75,6 +75,36 @@ namespace ApiContractGenerator.Source
                     ? Array.Empty<GenericParameterTypeReference>()
                     : GenericContext.TypeParameters;
 
+
+            private IReadOnlyList<IMetadataField> fields;
+            public IReadOnlyList<IMetadataField> Fields
+            {
+                get
+                {
+                    if (fields == null)
+                    {
+                        var r = new List<IMetadataField>();
+
+                        foreach (var handle in Definition.GetFields())
+                        {
+                            var definition = Reader.GetFieldDefinition(handle);
+                            switch (definition.Attributes & FieldAttributes.FieldAccessMask)
+                            {
+                                case FieldAttributes.Public:
+                                case FieldAttributes.Family:
+                                case FieldAttributes.FamORAssem:
+                                    r.Add(new ReaderField(Reader, definition, GenericContext));
+                                    break;
+                            }
+                        }
+
+                        fields = r;
+                    }
+                    return fields;
+                }
+            }
+
+
             private IReadOnlyList<IMetadataType> nestedTypes;
             public IReadOnlyList<IMetadataType> NestedTypes
             {

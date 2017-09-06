@@ -74,10 +74,37 @@ namespace ApiContractGenerator
             }
         }
 
+        public void Write(IMetadataField metadataField)
+        {
+            WriteVisibility(metadataField.Visibility);
+
+            if (metadataField.IsLiteral)
+                writer.Write("const ");
+            else if (metadataField.IsStatic)
+                writer.Write("static ");
+            if (metadataField.IsInitOnly)
+                writer.Write("readonly ");
+
+            Write(metadataField.FieldType);
+            writer.Write(' ');
+            writer.Write(metadataField.Name);
+            writer.WriteLine(';');
+
+        }
+
         private void WriteTypeMembers(IMetadataType metadataType)
         {
             writer.WriteLine('{');
             writer.Indent();
+
+            foreach (var field in metadataType.Fields
+                .OrderByDescending(_ => _.IsLiteral)
+                .ThenByDescending(_ => _.IsStatic)
+                .ThenByDescending(_ => _.IsInitOnly)
+                .ThenBy(_ => _.Name))
+            {
+                Write(field);
+            }
 
             foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))
                 Write(nestedType);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -380,18 +381,57 @@ namespace ApiContractGenerator
 
         }
 
+        private void WriteEnumFields(IMetadataEnum metadataEnum)
+        {
+            switch (((PrimitiveTypeReference)metadataEnum.UnderlyingType).Code)
+            {
+                case PrimitiveTypeCode.Int32:
+                {
+                    var enumFields = new List<(string name, int value)>(metadataEnum.Fields.Count);
+                    foreach (var field in metadataEnum.Fields)
+                    {
+                        if (!field.IsLiteral) continue;
+                        enumFields.Add((field.Name, field.DefaultValue.GetValueAsInt32()));
+                    }
+
+                    enumFields.Sort((x, y) =>
+                    {
+                        var byValue = x.value.CompareTo(y.value);
+                        return byValue != 0 ? byValue : string.Compare(x.name, y.name, StringComparison.Ordinal);
+                    });
+
+                    for (var i = 0; i < enumFields.Count; i++)
+                    {
+                        if (i != 0) writer.WriteLine(',');
+                        var (name, value) = enumFields[i];
+                        writer.Write(name);
+                        writer.Write(" = ");
+                        writer.Write(value);
+                    }
+                    writer.WriteLine();
+                    break;
+                }
+            }
+        }
         private void WriteTypeMembers(IMetadataType metadataType)
         {
             writer.WriteLine('{');
             writer.Indent();
 
-            foreach (var field in metadataType.Fields
-                .OrderByDescending(_ => _.IsLiteral)
-                .ThenByDescending(_ => _.IsStatic)
-                .ThenByDescending(_ => _.IsInitOnly)
-                .ThenBy(_ => _.Name))
+            if (metadataType is IMetadataEnum metadataEnum)
             {
-                Write(field);
+                WriteEnumFields(metadataEnum);
+            }
+            else
+            {
+                foreach (var field in metadataType.Fields
+                    .OrderByDescending(_ => _.IsLiteral)
+                    .ThenByDescending(_ => _.IsStatic)
+                    .ThenByDescending(_ => _.IsInitOnly)
+                    .ThenBy(_ => _.Name))
+                {
+                    Write(field);
+                }
             }
 
             foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))

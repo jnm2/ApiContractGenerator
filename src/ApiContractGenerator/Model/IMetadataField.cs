@@ -7,5 +7,6 @@ namespace ApiContractGenerator.Model
         bool IsLiteral { get; }
         bool IsInitOnly { get; }
         MetadataTypeReference FieldType { get; }
+        IMetadataConstantValue DefaultValue { get; }
     }
 }

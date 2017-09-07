@@ -47,6 +47,23 @@ namespace ApiContractGenerator.Source
             private MetadataTypeReference fieldType;
             public MetadataTypeReference FieldType =>
                 fieldType ?? (fieldType = definition.DecodeSignature(SignatureTypeProvider.Instance, genericContext));
+
+
+            private ReaderConstantValue defaultValue;
+            private bool isDefaultValueValid;
+            public IMetadataConstantValue DefaultValue
+            {
+                get
+                {
+                    if (!isDefaultValueValid)
+                    {
+                        var defaultValueHandle = definition.GetDefaultValue();
+                        if (!defaultValueHandle.IsNil) defaultValue = new ReaderConstantValue(reader, defaultValueHandle);
+                        isDefaultValueValid = true;
+                    }
+                    return defaultValue;
+                }
+            }
         }
     }
 }

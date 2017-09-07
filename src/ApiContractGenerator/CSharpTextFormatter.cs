@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
 using ApiContractGenerator.Source;
@@ -74,6 +75,286 @@ namespace ApiContractGenerator
             }
         }
 
+        public void WriteStringLiteral(string literal)
+        {
+            writer.Write('"');
+            foreach (var c in literal)
+            {
+                switch (c)
+                {
+                    case '\0':
+                        writer.Write("\\0");
+                        break;
+                    case '\x1':
+                        writer.Write("\\x1");
+                        break;
+                    case '\x2':
+                        writer.Write("\\x2");
+                        break;
+                    case '\x3':
+                        writer.Write("\\x3");
+                        break;
+                    case '\x4':
+                        writer.Write("\\x4");
+                        break;
+                    case '\x5':
+                        writer.Write("\\x5");
+                        break;
+                    case '\x6':
+                        writer.Write("\\x6");
+                        break;
+                    case '\a':
+                        writer.Write("\\a");
+                        break;
+                    case '\b':
+                        writer.Write("\\b");
+                        break;
+                    case '\t':
+                        writer.Write("\\t");
+                        break;
+                    case '\n':
+                        writer.Write("\\n");
+                        break;
+                    case '\v':
+                        writer.Write("\\v");
+                        break;
+                    case '\f':
+                        writer.Write("\\f");
+                        break;
+                    case '\r':
+                        writer.Write("\\r");
+                        break;
+                    case '\xE':
+                        writer.Write("\\xE");
+                        break;
+                    case '\xF':
+                        writer.Write("\\xF");
+                        break;
+                    case '\x10':
+                        writer.Write("\\x10");
+                        break;
+                    case '\x11':
+                        writer.Write("\\x11");
+                        break;
+                    case '\x12':
+                        writer.Write("\\x12");
+                        break;
+                    case '\x13':
+                        writer.Write("\\x13");
+                        break;
+                    case '\x14':
+                        writer.Write("\\x14");
+                        break;
+                    case '\x15':
+                        writer.Write("\\x15");
+                        break;
+                    case '\x16':
+                        writer.Write("\\x16");
+                        break;
+                    case '\x17':
+                        writer.Write("\\x17");
+                        break;
+                    case '\x18':
+                        writer.Write("\\x18");
+                        break;
+                    case '\x19':
+                        writer.Write("\\x19");
+                        break;
+                    case '\x1A':
+                        writer.Write("\\x1A");
+                        break;
+                    case '\x1B':
+                        writer.Write("\\x1B");
+                        break;
+                    case '\x1C':
+                        writer.Write("\\x1C");
+                        break;
+                    case '\x1D':
+                        writer.Write("\\x1D");
+                        break;
+                    case '\x1E':
+                        writer.Write("\\x1E");
+                        break;
+                    case '\x1F':
+                        writer.Write("\\x1F");
+                        break;
+                    case '"':
+                        writer.Write("\\\"");
+                        break;
+                    case '\\':
+                        writer.Write("\\\\");
+                        break;
+                    default:
+                        writer.Write(c);
+                        break;
+                }
+            }
+            writer.Write('"');
+        }
+
+        public void WriteCharLiteral(char literal)
+        {
+            writer.Write('\'');
+            switch (literal)
+            {
+                case '\0':
+                    writer.Write("\\0");
+                    break;
+                case '\x1':
+                    writer.Write("\\x1");
+                    break;
+                case '\x2':
+                    writer.Write("\\x2");
+                    break;
+                case '\x3':
+                    writer.Write("\\x3");
+                    break;
+                case '\x4':
+                    writer.Write("\\x4");
+                    break;
+                case '\x5':
+                    writer.Write("\\x5");
+                    break;
+                case '\x6':
+                    writer.Write("\\x6");
+                    break;
+                case '\a':
+                    writer.Write("\\a");
+                    break;
+                case '\b':
+                    writer.Write("\\b");
+                    break;
+                case '\t':
+                    writer.Write("\\t");
+                    break;
+                case '\n':
+                    writer.Write("\\n");
+                    break;
+                case '\v':
+                    writer.Write("\\v");
+                    break;
+                case '\f':
+                    writer.Write("\\f");
+                    break;
+                case '\r':
+                    writer.Write("\\r");
+                    break;
+                case '\xE':
+                    writer.Write("\\xE");
+                    break;
+                case '\xF':
+                    writer.Write("\\xF");
+                    break;
+                case '\x10':
+                    writer.Write("\\x10");
+                    break;
+                case '\x11':
+                    writer.Write("\\x11");
+                    break;
+                case '\x12':
+                    writer.Write("\\x12");
+                    break;
+                case '\x13':
+                    writer.Write("\\x13");
+                    break;
+                case '\x14':
+                    writer.Write("\\x14");
+                    break;
+                case '\x15':
+                    writer.Write("\\x15");
+                    break;
+                case '\x16':
+                    writer.Write("\\x16");
+                    break;
+                case '\x17':
+                    writer.Write("\\x17");
+                    break;
+                case '\x18':
+                    writer.Write("\\x18");
+                    break;
+                case '\x19':
+                    writer.Write("\\x19");
+                    break;
+                case '\x1A':
+                    writer.Write("\\x1A");
+                    break;
+                case '\x1B':
+                    writer.Write("\\x1B");
+                    break;
+                case '\x1C':
+                    writer.Write("\\x1C");
+                    break;
+                case '\x1D':
+                    writer.Write("\\x1D");
+                    break;
+                case '\x1E':
+                    writer.Write("\\x1E");
+                    break;
+                case '\x1F':
+                    writer.Write("\\x1F");
+                    break;
+                case '\'':
+                    writer.Write("\'");
+                    break;
+                case '\\':
+                    writer.Write("\\\\");
+                    break;
+                default:
+                    writer.Write(literal);
+                    break;
+            }
+            writer.Write('\'');
+        }
+
+        public void Write(IMetadataConstantValue metadataConstantValue)
+        {
+            switch (metadataConstantValue.TypeCode)
+            {
+                case ConstantTypeCode.Boolean:
+                    WriteStringLiteral(metadataConstantValue.GetValueAsBoolean() ? "true" : "false");
+                    break;
+                case ConstantTypeCode.Char:
+                    WriteCharLiteral(metadataConstantValue.GetValueAsChar());
+                    break;
+                case ConstantTypeCode.SByte:
+                    writer.Write(metadataConstantValue.GetValueAsSByte());
+                    break;
+                case ConstantTypeCode.Byte:
+                    writer.Write(metadataConstantValue.GetValueAsByte());
+                    break;
+                case ConstantTypeCode.Int16:
+                    writer.Write(metadataConstantValue.GetValueAsInt16());
+                    break;
+                case ConstantTypeCode.UInt16:
+                    writer.Write(metadataConstantValue.GetValueAsUInt16());
+                    break;
+                case ConstantTypeCode.Int32:
+                    writer.Write(metadataConstantValue.GetValueAsInt32());
+                    break;
+                case ConstantTypeCode.UInt32:
+                    writer.Write(metadataConstantValue.GetValueAsUInt32());
+                    break;
+                case ConstantTypeCode.Int64:
+                    writer.Write(metadataConstantValue.GetValueAsInt64());
+                    break;
+                case ConstantTypeCode.UInt64:
+                    writer.Write(metadataConstantValue.GetValueAsUInt64());
+                    break;
+                case ConstantTypeCode.Single:
+                    writer.Write(metadataConstantValue.GetValueAsSingle());
+                    break;
+                case ConstantTypeCode.Double:
+                    writer.Write(metadataConstantValue.GetValueAsDouble());
+                    break;
+                case ConstantTypeCode.String:
+                    WriteStringLiteral(metadataConstantValue.GetValueAsString());
+                    break;
+                case ConstantTypeCode.NullReference:
+                    writer.Write("null");
+                    break;
+            }
+        }
+
         public void Write(IMetadataField metadataField)
         {
             WriteVisibility(metadataField.Visibility);
@@ -88,6 +369,13 @@ namespace ApiContractGenerator
             Write(metadataField.FieldType);
             writer.Write(' ');
             writer.Write(metadataField.Name);
+
+            if (metadataField.DefaultValue != null)
+            {
+                writer.Write(" = ");
+                Write(metadataField.DefaultValue);
+            }
+
             writer.WriteLine(';');
 
         }

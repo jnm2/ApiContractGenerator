@@ -549,8 +549,16 @@ namespace ApiContractGenerator
 
                 if (metadataParameter.IsOut)
                 {
-                    writer.Write("out ");
-                    Write(((ByRefTypeReference)metadataParameter.ParameterType).ElementType, currentNamespace);
+                    if (metadataParameter.ParameterType is ByRefTypeReference byref)
+                    {
+                        writer.Write("out ");
+                        Write(byref.ElementType, currentNamespace);
+                    }
+                    else
+                    {
+                        writer.Write("[Out] ");
+                        Write(metadataParameter.ParameterType, currentNamespace);
+                    }
                 }
                 else
                 {

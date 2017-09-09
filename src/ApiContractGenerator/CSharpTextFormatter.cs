@@ -455,11 +455,13 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataMethod metadataMethod, IMetadataType declaringType, string currentNamespace)
         {
-            WriteVisibility(metadataMethod.Visibility);
+            var isInterface = declaringType is IMetadataInterface;
+            if (!(isInterface && metadataMethod.Visibility == MetadataVisibility.Public))
+                WriteVisibility(metadataMethod.Visibility);
 
             if (metadataMethod.IsStatic)
                 writer.Write("static ");
-            if (metadataMethod.IsAbstract)
+            if (metadataMethod.IsAbstract && !isInterface)
                 writer.Write("abstract ");
             if (metadataMethod.IsVirtual && !(metadataMethod.IsOverride || metadataMethod.IsAbstract || metadataMethod.IsFinal))
                 writer.Write("virtual ");

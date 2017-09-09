@@ -9,12 +9,12 @@ using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
 {
-    public sealed partial class RoslynMetadataSource : IMetadataSource, IDisposable
+    public sealed partial class MetadataReaderSource : IMetadataSource, IDisposable
     {
         private readonly PEReader peReader;
         private readonly MetadataReader reader;
 
-        public RoslynMetadataSource(Stream stream)
+        public MetadataReaderSource(Stream stream)
         {
             peReader = new PEReader(stream);
             reader = peReader.GetMetadataReader();

@@ -3,7 +3,7 @@ using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
 {
-    public sealed partial class RoslynMetadataSource
+    public sealed partial class MetadataReaderSource
     {
         private sealed class GenericContext
         {

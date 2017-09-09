@@ -2,12 +2,11 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection.Metadata;
-using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
 {
-    public sealed partial class RoslynMetadataSource
+    public sealed partial class MetadataReaderSource
     {
         private sealed class SignatureTypeProvider : ISignatureTypeProvider<MetadataTypeReference, GenericContext>
         {

@@ -36,7 +36,7 @@ namespace ApiContractGenerator.Console
                 IgnoredNamespaces = { "NUnit.Framework.Internal" }
             };
 
-            using (var source = new RoslynMetadataSource(File.OpenRead(assemblyPath)))
+            using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath)))
             using (var outputFile = File.CreateText(outputPath))
                 generator.Generate(source, new CSharpTextFormatter(outputFile));
         }

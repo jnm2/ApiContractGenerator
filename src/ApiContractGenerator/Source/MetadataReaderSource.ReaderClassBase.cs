@@ -23,31 +23,8 @@ namespace ApiContractGenerator.Source
             }
 
             private GenericContext genericContext;
-            protected GenericContext GenericContext
-            {
-                get
-                {
-                    if (genericContext == null)
-                    {
-                        var genericParameters = Definition.GetGenericParameters();
-                        if (genericParameters.Count == 0)
-                        {
-                            genericContext = parentGenericContext;
-                        }
-                        else
-                        {
-                            var childParameters = new GenericParameterTypeReference[genericParameters.Count];
-                            foreach (var handle in genericParameters)
-                            {
-                                var genericParameter = Reader.GetGenericParameter(handle);
-                                childParameters[genericParameter.Index] = new GenericParameterTypeReference(Reader.GetString(genericParameter.Name));
-                            }
-                            genericContext = new GenericContext(parentGenericContext, childParameters);
-                        }
-                    }
-                    return genericContext;
-                }
-            }
+            protected GenericContext GenericContext => genericContext ?? (genericContext =
+                GenericContext.Create(Reader, parentGenericContext, Definition.GetGenericParameters()));
 
             private string name;
             public string Name => name ?? (name = Reader.GetString(Definition.Name));
@@ -142,6 +119,33 @@ namespace ApiContractGenerator.Source
                 }
             }
 
+            private IReadOnlyList<IMetadataMethod> methods;
+            public IReadOnlyList<IMetadataMethod> Methods
+            {
+                get
+                {
+                    if (methods == null)
+                    {
+                        var r = new List<IMetadataMethod>();
+
+                        foreach (var handle in Definition.GetMethods())
+                        {
+                            var definition = Reader.GetMethodDefinition(handle);
+                            switch (definition.Attributes & MethodAttributes.MemberAccessMask)
+                            {
+                                case MethodAttributes.Public:
+                                case MethodAttributes.Family:
+                                case MethodAttributes.FamORAssem:
+                                    r.Add(new ReaderMethod(Reader, definition, GenericContext));
+                                    break;
+                            }
+                        }
+
+                        methods = r;
+                    }
+                    return methods;
+                }
+            }
 
             private IReadOnlyList<IMetadataType> nestedTypes;
             public IReadOnlyList<IMetadataType> NestedTypes

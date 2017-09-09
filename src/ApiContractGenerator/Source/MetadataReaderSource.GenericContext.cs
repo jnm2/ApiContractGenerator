@@ -1,4 +1,5 @@
 using System;
+using System.Reflection.Metadata;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
@@ -27,6 +28,19 @@ namespace ApiContractGenerator.Source
                 absoluteIndex < parentTotalParameterCount
                     ? parentContext[absoluteIndex]
                     : TypeParameters[absoluteIndex - parentTotalParameterCount];
+
+            public static GenericContext Create(MetadataReader reader, GenericContext parentContext, GenericParameterHandleCollection genericParameters)
+            {
+                if (genericParameters.Count == 0) return parentContext;
+
+                var childParameters = new GenericParameterTypeReference[genericParameters.Count];
+                foreach (var handle in genericParameters)
+                {
+                    var genericParameter = reader.GetGenericParameter(handle);
+                    childParameters[genericParameter.Index] = new GenericParameterTypeReference(reader.GetString(genericParameter.Name));
+                }
+                return new GenericContext(parentContext, childParameters);
+            }
         }
     }
 }

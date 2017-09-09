@@ -49,7 +49,7 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference GetByReferenceType(MetadataTypeReference elementType)
             {
-                throw new NotImplementedException();
+                return new ByRefTypeReference(elementType);
             }
 
             public MetadataTypeReference GetPointerType(MetadataTypeReference elementType)

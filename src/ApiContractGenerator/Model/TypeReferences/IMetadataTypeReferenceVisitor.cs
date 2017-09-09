@@ -7,6 +7,7 @@ namespace ApiContractGenerator.Model.TypeReferences
         T Visit(NamespaceTypeReference namespaceTypeReference);
         T Accept(GenericParameterTypeReference genericParameterTypeReference);
         T Visit(GenericInstantiationTypeReference genericInstantiationTypeReference);
+        T Visit(ByRefTypeReference byRefTypeReference);
         T Visit(NestedTypeReference nestedTypeReference);
     }
 }

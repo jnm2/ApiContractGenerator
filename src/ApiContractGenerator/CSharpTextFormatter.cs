@@ -747,6 +747,12 @@ namespace ApiContractGenerator
             public ImmutableNode<string> Visit(GenericInstantiationTypeReference genericInstantiationTypeReference)
             {
                 var args = genericInstantiationTypeReference.GenericTypeArguments;
+
+                if (args.Count == 1 && genericInstantiationTypeReference.TypeDefinition.Name == "Nullable`1" && genericInstantiationTypeReference.TypeDefinition.Namespace == "System")
+                {
+                    return new ImmutableNode<string>(args[0].Accept(this), "?", null);
+                }
+
                 var current = new ImmutableNode<string>(args[args.Count - 1].Accept(this), ">", null);
 
                 for (var i = args.Count - 2; i >= 0; i--)

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
@@ -12,25 +13,61 @@ namespace ApiContractGenerator.Source
             {
             }
 
-            private MethodSignature<MetadataTypeReference>? invokeMethodSignature;
-            private MethodSignature<MetadataTypeReference> GetInvokeMethodSignature()
+            private MethodDefinition? invokeMethod;
+            private MethodDefinition InvokeMethod
             {
-                if (invokeMethodSignature == null)
+                get
                 {
-                    foreach (var handle in Definition.GetMethods())
+                    if (invokeMethod == null)
                     {
-                        var method = Reader.GetMethodDefinition(handle);
-                        if (Reader.GetString(method.Name) == "Invoke")
+                        foreach (var handle in Definition.GetMethods())
                         {
-                            invokeMethodSignature = method.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
-                            break;
+                            var method = Reader.GetMethodDefinition(handle);
+                            if (Reader.GetString(method.Name) == "Invoke")
+                            {
+                                invokeMethod = method;
+                                break;
+                            }
                         }
                     }
+                    return invokeMethod.Value;
                 }
-                return invokeMethodSignature.Value;
             }
 
-            public MetadataTypeReference ReturnType => GetInvokeMethodSignature().ReturnType;
+            private MethodSignature<MetadataTypeReference>? invokeMethodSignature;
+            private MethodSignature<MetadataTypeReference> InvokeMethodSignature
+            {
+                get
+                {
+                    if (invokeMethodSignature == null)
+                        invokeMethodSignature = InvokeMethod.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
+                    return invokeMethodSignature.Value;
+                }
+            }
+
+            public MetadataTypeReference ReturnType => InvokeMethodSignature.ReturnType;
+
+            private IReadOnlyList<IMetadataParameter> parameters;
+            public IReadOnlyList<IMetadataParameter> Parameters
+            {
+                get
+                {
+                    if (parameters == null)
+                    {
+                        var handles = InvokeMethod.GetParameters();
+                        var r = new IMetadataParameter[handles.Count];
+                        var signature = InvokeMethodSignature;
+                        foreach (var handle in handles)
+                        {
+                            var parameter = Reader.GetParameter(handle);
+                            var parameterIndex = parameter.SequenceNumber - 1;
+                            r[parameterIndex] = new ReaderParameter(Reader, parameter, signature.ParameterTypes[parameterIndex]);
+                        }
+                        parameters = r;
+                    }
+                    return parameters;
+                }
+            }
         }
     }
 }

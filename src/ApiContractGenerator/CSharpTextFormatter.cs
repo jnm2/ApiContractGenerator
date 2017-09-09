@@ -420,33 +420,15 @@ namespace ApiContractGenerator
             }
         }
 
-        public void Write(IMetadataMethod metadataMethod, string currentNamespace)
+        private void WriteParameters(IReadOnlyList<IMetadataParameter> parameters, string currentNamespace)
         {
-            WriteVisibility(metadataMethod.Visibility);
-
-            if (metadataMethod.IsStatic)
-                writer.Write("static ");
-            if (metadataMethod.IsAbstract)
-                writer.Write("abstract ");
-            if (metadataMethod.IsVirtual && !(metadataMethod.IsOverride || metadataMethod.IsAbstract || metadataMethod.IsFinal))
-                writer.Write("virtual ");
-            if (metadataMethod.IsFinal && metadataMethod.IsOverride)
-                writer.Write("sealed ");
-            if (metadataMethod.IsOverride)
-                writer.Write("override ");
-
-            Write(metadataMethod.ReturnType, currentNamespace);
-            writer.Write(' ');
-            writer.Write(metadataMethod.Name);
-            WriteGenericSignature(metadataMethod.GenericTypeParameters);
-
             writer.Write('(');
 
-            for (var i = 0; i < metadataMethod.Parameters.Count; i++)
+            for (var i = 0; i < parameters.Count; i++)
             {
                 if (i != 0) writer.Write(", ");
 
-                var metadataParameter = metadataMethod.Parameters[i];
+                var metadataParameter = parameters[i];
 
                 if (metadataParameter.IsOut)
                 {
@@ -468,7 +450,30 @@ namespace ApiContractGenerator
                 }
             }
 
-            writer.WriteLine(");");
+            writer.Write(')');
+        }
+
+        public void Write(IMetadataMethod metadataMethod, string currentNamespace)
+        {
+            WriteVisibility(metadataMethod.Visibility);
+
+            if (metadataMethod.IsStatic)
+                writer.Write("static ");
+            if (metadataMethod.IsAbstract)
+                writer.Write("abstract ");
+            if (metadataMethod.IsVirtual && !(metadataMethod.IsOverride || metadataMethod.IsAbstract || metadataMethod.IsFinal))
+                writer.Write("virtual ");
+            if (metadataMethod.IsFinal && metadataMethod.IsOverride)
+                writer.Write("sealed ");
+            if (metadataMethod.IsOverride)
+                writer.Write("override ");
+
+            Write(metadataMethod.ReturnType, currentNamespace);
+            writer.Write(' ');
+            writer.Write(metadataMethod.Name);
+            WriteGenericSignature(metadataMethod.GenericTypeParameters);
+            WriteParameters(metadataMethod.Parameters, currentNamespace);
+            writer.WriteLine(';');
         }
 
         private void WriteTypeMembers(IMetadataType metadataType, string currentNamespace)
@@ -611,7 +616,7 @@ namespace ApiContractGenerator
             Write(metadataDelegate.ReturnType, currentNamespace);
             writer.Write(' ');
             WriteTypeNameAndGenericSignature(metadataDelegate);
-
+            WriteParameters(metadataDelegate.Parameters, currentNamespace);
             writer.WriteLine(';');
         }
 

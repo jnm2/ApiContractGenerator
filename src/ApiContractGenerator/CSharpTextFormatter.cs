@@ -32,7 +32,7 @@ namespace ApiContractGenerator
             writer.Indent();
 
             foreach (var type in metadataNamespace.Types.OrderBy(_ => _.Name))
-                Write(type);
+                Write(type, metadataNamespace.Name);
 
             writer.Unindent();
             writer.WriteLine('}');
@@ -356,7 +356,7 @@ namespace ApiContractGenerator
             }
         }
 
-        public void Write(IMetadataField metadataField)
+        public void Write(IMetadataField metadataField, string currentNamespace)
         {
             WriteVisibility(metadataField.Visibility);
 
@@ -367,7 +367,7 @@ namespace ApiContractGenerator
             if (metadataField.IsInitOnly)
                 writer.Write("readonly ");
 
-            Write(metadataField.FieldType);
+            Write(metadataField.FieldType, currentNamespace);
             writer.Write(' ');
             writer.Write(metadataField.Name);
 
@@ -413,7 +413,7 @@ namespace ApiContractGenerator
                 }
             }
         }
-        private void WriteTypeMembers(IMetadataType metadataType)
+        private void WriteTypeMembers(IMetadataType metadataType, string currentNamespace)
         {
             writer.WriteLine('{');
             writer.Indent();
@@ -430,18 +430,18 @@ namespace ApiContractGenerator
                     .ThenByDescending(_ => _.IsInitOnly)
                     .ThenBy(_ => _.Name))
                 {
-                    Write(field);
+                    Write(field, currentNamespace);
                 }
             }
 
             foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))
-                Write(nestedType);
+                Write(nestedType, currentNamespace);
 
             writer.Unindent();
             writer.WriteLine('}');
         }
 
-        private void WriteBaseTypeAndInterfaces(IMetadataType metadataType)
+        private void WriteBaseTypeAndInterfaces(IMetadataType metadataType, string currentNamespace)
         {
             var didWriteColon = false;
 
@@ -450,7 +450,7 @@ namespace ApiContractGenerator
             {
                 writer.Write(" : ");
                 didWriteColon = true;
-                Write(metadataType.BaseType);
+                Write(metadataType.BaseType, currentNamespace);
             }
 
             foreach (var interfaceImplementation in metadataType.InterfaceImplementations)
@@ -465,33 +465,33 @@ namespace ApiContractGenerator
                     writer.Write(", ");
                 }
 
-                Write(interfaceImplementation);
+                Write(interfaceImplementation, currentNamespace);
             }
         }
 
-        public void Write(IMetadataType metadataType)
+        public void Write(IMetadataType metadataType, string currentNamespace)
         {
             switch (metadataType)
             {
                 case IMetadataClass metadataClass:
-                    Write(metadataClass);
+                    Write(metadataClass, currentNamespace);
                     break;
                 case IMetadataStruct metadataStruct:
-                    Write(metadataStruct);
+                    Write(metadataStruct, currentNamespace);
                     break;
                 case IMetadataEnum metadataEnum:
-                    Write(metadataEnum);
+                    Write(metadataEnum, currentNamespace);
                     break;
                 case IMetadataDelegate metadataDelegate:
-                    Write(metadataDelegate);
+                    Write(metadataDelegate, currentNamespace);
                     break;
                 case IMetadataInterface metadataInterface:
-                    Write(metadataInterface);
+                    Write(metadataInterface, currentNamespace);
                     break;
             }
         }
 
-        public void Write(IMetadataClass metadataClass)
+        public void Write(IMetadataClass metadataClass, string currentNamespace)
         {
             WriteVisibility(metadataClass.Visibility);
 
@@ -504,55 +504,55 @@ namespace ApiContractGenerator
 
             writer.Write("class ");
             WriteNameAndGenericSignature(metadataClass);
-            WriteBaseTypeAndInterfaces(metadataClass);
+            WriteBaseTypeAndInterfaces(metadataClass, currentNamespace);
             writer.WriteLine();
-            WriteTypeMembers(metadataClass);
+            WriteTypeMembers(metadataClass, currentNamespace);
         }
 
-        public void Write(IMetadataStruct metadataStruct)
+        public void Write(IMetadataStruct metadataStruct, string currentNamespace)
         {
             WriteVisibility(metadataStruct.Visibility);
             writer.Write("struct ");
             WriteNameAndGenericSignature(metadataStruct);
             writer.WriteLine();
-            WriteTypeMembers(metadataStruct);
+            WriteTypeMembers(metadataStruct, currentNamespace);
         }
 
-        public void Write(IMetadataInterface metadataInterface)
+        public void Write(IMetadataInterface metadataInterface, string currentNamespace)
         {
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
             WriteNameAndGenericSignature(metadataInterface);
-            WriteBaseTypeAndInterfaces(metadataInterface);
+            WriteBaseTypeAndInterfaces(metadataInterface, currentNamespace);
             writer.WriteLine();
-            WriteTypeMembers(metadataInterface);
+            WriteTypeMembers(metadataInterface, currentNamespace);
         }
 
-        public void Write(IMetadataEnum metadataEnum)
+        public void Write(IMetadataEnum metadataEnum, string currentNamespace)
         {
             WriteVisibility(metadataEnum.Visibility);
             writer.Write("enum ");
             WriteNameAndGenericSignature(metadataEnum);
             writer.Write(" : ");
-            Write(metadataEnum.UnderlyingType);
+            Write(metadataEnum.UnderlyingType, currentNamespace);
             writer.WriteLine();
-            WriteTypeMembers(metadataEnum);
+            WriteTypeMembers(metadataEnum, currentNamespace);
         }
 
-        public void Write(IMetadataDelegate metadataDelegate)
+        public void Write(IMetadataDelegate metadataDelegate, string currentNamespace)
         {
             WriteVisibility(metadataDelegate.Visibility);
             writer.Write("delegate ");
-            Write(metadataDelegate.ReturnType);
+            Write(metadataDelegate.ReturnType, currentNamespace);
             writer.Write(' ');
             WriteNameAndGenericSignature(metadataDelegate);
 
             writer.WriteLine(';');
         }
 
-        private void Write(MetadataTypeReference typeReference)
+        private void Write(MetadataTypeReference typeReference, string currentNamespace)
         {
-            Write(typeReference.Accept(SignatureTypeProvider.Instance));
+            Write(typeReference.Accept(new SignatureTypeProvider(currentNamespace)));
         }
 
         private void Write(ImmutableNode<string> parts)
@@ -580,8 +580,12 @@ namespace ApiContractGenerator
 
         private sealed class SignatureTypeProvider : IMetadataTypeReferenceVisitor<ImmutableNode<string>>
         {
-            public static readonly SignatureTypeProvider Instance = new SignatureTypeProvider();
-            private SignatureTypeProvider() { }
+            private readonly string currentNamespace;
+
+            public SignatureTypeProvider(string currentNamespace)
+            {
+                this.currentNamespace = currentNamespace;
+            }
 
             private static ImmutableNode<string> Literal(string value) => new ImmutableNode<string>(null, value, null);
 
@@ -650,7 +654,7 @@ namespace ApiContractGenerator
             public ImmutableNode<string> Visit(NamespaceTypeReference namespaceTypeReference)
             {
                 var nameNode = new ImmutableNode<string>(null, TrimGenericArity(namespaceTypeReference.Name), null);
-                return string.IsNullOrEmpty(namespaceTypeReference.Namespace) ? nameNode :
+                return currentNamespace == namespaceTypeReference.Namespace || string.IsNullOrEmpty(namespaceTypeReference.Namespace) ? nameNode :
                     new ImmutableNode<string>(new ImmutableNode<string>(null, namespaceTypeReference.Namespace, null), ".", nameNode);
             }
 

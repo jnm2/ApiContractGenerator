@@ -489,6 +489,47 @@ namespace ApiContractGenerator
             }
         }
 
+        public void Write(IMetadataEvent metadataEvent, IMetadataType declaringType, string currentNamespace)
+        {
+            var modifiers = MethodModifiers.CombineAccessors(metadataEvent.AddAccessor, metadataEvent.RemoveAccessor, metadataEvent.RaiseAccessor);
+            var declaringTypeIsInterface = declaringType is IMetadataInterface;
+            WriteMethodModifiers(modifiers, declaringTypeIsInterface);
+
+            writer.Write("event ");
+            Write(metadataEvent.HandlerType, currentNamespace);
+            writer.Write(' ');
+            writer.Write(metadataEvent.Name);
+
+            if (metadataEvent.AddAccessor != null && metadataEvent.RemoveAccessor != null && metadataEvent.RaiseAccessor == null)
+            {
+                writer.WriteLine(';');
+            }
+            else
+            {
+                writer.Write(" { ");
+
+                if (metadataEvent.AddAccessor != null)
+                {
+                    WriteMethodModifiers(MethodModifiers.FromMethod(metadataEvent.AddAccessor).Except(modifiers), declaringTypeIsInterface);
+                    writer.Write("add; ");
+                }
+
+                if (metadataEvent.RemoveAccessor != null)
+                {
+                    WriteMethodModifiers(MethodModifiers.FromMethod(metadataEvent.RemoveAccessor).Except(modifiers), declaringTypeIsInterface);
+                    writer.Write("remove; ");
+                }
+
+                if (metadataEvent.RaiseAccessor != null)
+                {
+                    WriteMethodModifiers(MethodModifiers.FromMethod(metadataEvent.RaiseAccessor).Except(modifiers), declaringTypeIsInterface);
+                    writer.Write("raise; ");
+                }
+
+                writer.WriteLine('}');
+            }
+        }
+
         private void WriteParameters(IReadOnlyList<IMetadataParameter> parameters, string currentNamespace)
         {
             for (var i = 0; i < parameters.Count; i++)
@@ -569,6 +610,16 @@ namespace ApiContractGenerator
                 if (property.GetAccessor != null) unusedMethods.Remove(property.GetAccessor);
                 if (property.SetAccessor != null) unusedMethods.Remove(property.SetAccessor);
                 Write(property, metadataType, currentNamespace);
+            }
+
+            foreach (var @event in metadataType.Events
+                .OrderByDescending(_ => (_.AddAccessor ?? _.RemoveAccessor ?? _.RaiseAccessor).IsStatic)
+                .ThenBy(_ => _.Name))
+            {
+                if (@event.AddAccessor != null) unusedMethods.Remove(@event.AddAccessor);
+                if (@event.RemoveAccessor != null) unusedMethods.Remove(@event.RemoveAccessor);
+                if (@event.RaiseAccessor != null) unusedMethods.Remove(@event.RaiseAccessor);
+                Write(@event, metadataType, currentNamespace);
             }
 
             foreach (var method in unusedMethods

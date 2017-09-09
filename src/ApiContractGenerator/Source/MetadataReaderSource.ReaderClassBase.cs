@@ -145,6 +145,33 @@ namespace ApiContractGenerator.Source
                 }
             }
 
+            private IReadOnlyList<IMetadataEvent> events;
+            public IReadOnlyList<IMetadataEvent> Events
+            {
+                get
+                {
+                    if (events == null)
+                    {
+                        var r = new List<IMetadataEvent>();
+
+                        foreach (var handle in Definition.GetEvents())
+                        {
+                            var definition = Reader.GetEventDefinition(handle);
+                            var accessors = definition.GetAccessors();
+                            var visibleAdder = accessors.Adder.IsNil ? null : GetVisibleMethod(accessors.Adder);
+                            var visibleRemover = accessors.Remover.IsNil ? null : GetVisibleMethod(accessors.Remover);
+                            var visibleRaiser = accessors.Raiser.IsNil ? null : GetVisibleMethod(accessors.Raiser);
+                            if (visibleAdder == null && visibleRemover == null && visibleRaiser == null) continue;
+
+                            r.Add(new ReaderEvent(Reader, definition, GenericContext, visibleAdder, visibleRemover, visibleRaiser));
+                        }
+
+                        events = r;
+                    }
+                    return events;
+                }
+            }
+
             private IMetadataMethod GetVisibleMethod(MethodDefinitionHandle handle)
             {
                 var methods = Methods;

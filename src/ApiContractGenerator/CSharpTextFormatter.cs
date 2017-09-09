@@ -453,7 +453,7 @@ namespace ApiContractGenerator
             writer.Write(')');
         }
 
-        public void Write(IMetadataMethod metadataMethod, string currentNamespace)
+        public void Write(IMetadataMethod metadataMethod, IMetadataType declaringType, string currentNamespace)
         {
             WriteVisibility(metadataMethod.Visibility);
 
@@ -468,9 +468,17 @@ namespace ApiContractGenerator
             if (metadataMethod.IsOverride)
                 writer.Write("override ");
 
-            Write(metadataMethod.ReturnType, currentNamespace);
-            writer.Write(' ');
-            writer.Write(metadataMethod.Name);
+            if (metadataMethod.Name == ".ctor")
+            {
+                writer.Write(TrimGenericArity(declaringType.Name));
+            }
+            else
+            {
+                Write(metadataMethod.ReturnType, currentNamespace);
+                writer.Write(' ');
+                writer.Write(metadataMethod.Name);
+            }
+
             WriteGenericSignature(metadataMethod.GenericTypeParameters);
             WriteParameters(metadataMethod.Parameters, currentNamespace);
             writer.WriteLine(';');
@@ -499,9 +507,10 @@ namespace ApiContractGenerator
 
             foreach (var method in metadataType.Methods
                 .OrderByDescending(_ => _.IsStatic)
+                .ThenByDescending(_ => _.Name == ".ctor")
                 .ThenBy(_ => _.Name))
             {
-                Write(method, currentNamespace);
+                Write(method, metadataType, currentNamespace);
             }
 
             foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))
@@ -634,6 +643,12 @@ namespace ApiContractGenerator
             }
         }
 
+        private static string TrimGenericArity(string typeName)
+        {
+            var index = typeName.LastIndexOf('`');
+            return index == -1 ? typeName : typeName.Substring(0, index);
+        }
+
         private sealed class ImmutableNode<T>
         {
             public ImmutableNode(ImmutableNode<T> prev, T value, ImmutableNode<T> next)
@@ -713,12 +728,6 @@ namespace ApiContractGenerator
                 }
 
                 return new ImmutableNode<string>(array.ElementType.Accept(this), ArraySuffixesByDimension[array.Dimensions], null);
-            }
-
-            private static string TrimGenericArity(string typeName)
-            {
-                var index = typeName.LastIndexOf('`');
-                return index == -1 ? typeName : typeName.Substring(0, index);
             }
 
             public ImmutableNode<string> Visit(NamespaceTypeReference namespaceTypeReference)

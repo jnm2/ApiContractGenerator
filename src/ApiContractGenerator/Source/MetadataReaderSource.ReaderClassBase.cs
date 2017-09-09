@@ -238,6 +238,27 @@ namespace ApiContractGenerator.Source
                 }
             }
 
+            private static bool TryGetNonGenericTypeNamespaceAndName(MetadataReader reader, EntityHandle entity, out string @namespace, out string name)
+            {
+                switch (entity.Kind)
+                {
+                    case HandleKind.TypeReference:
+                        var reference = reader.GetTypeReference((TypeReferenceHandle)entity);
+                        @namespace = reader.GetString(reference.Namespace);
+                        name = reader.GetString(reference.Name);
+                        return true;
+                    case HandleKind.TypeDefinition:
+                        var definition = reader.GetTypeDefinition((TypeDefinitionHandle)entity);
+                        @namespace = reader.GetString(definition.Namespace);
+                        name = reader.GetString(definition.Name);
+                        return true;
+                    default:
+                        @namespace = null;
+                        name = null;
+                        return false;
+                }
+            }
+
             public static ReaderClassBase Create(MetadataReader reader, TypeDefinition typeDefinition, GenericContext parentGenericContext)
             {
                 if ((typeDefinition.Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface)
@@ -245,12 +266,9 @@ namespace ApiContractGenerator.Source
                     return new ReaderInterface(reader, typeDefinition, parentGenericContext);
                 }
 
-                if (typeDefinition.BaseType.Kind == HandleKind.TypeReference)
+                if (!typeDefinition.BaseType.IsNil
+                    && TryGetNonGenericTypeNamespaceAndName(reader, typeDefinition.BaseType, out var baseTypeNamespace, out var baseTypeName))
                 {
-                    var baseType = reader.GetTypeReference((TypeReferenceHandle)typeDefinition.BaseType);
-                    var baseTypeName = reader.GetString(baseType.Name);
-                    var baseTypeNamespace = reader.GetString(baseType.Namespace);
-
                     if (baseTypeName == "Enum" && baseTypeNamespace == "System")
                     {
                         return new ReaderEnum(reader, typeDefinition, parentGenericContext);

@@ -441,6 +441,19 @@ namespace ApiContractGenerator
             writer.WriteLine('}');
         }
 
+        private void WriteBaseTypeAndInterfaces(IMetadataType metadataType)
+        {
+            var didWriteColon = false;
+
+            if (metadataType.BaseType != null &&
+                !(metadataType is IMetadataClass && metadataType.BaseType is NamedTypeReference named && named.Namespace == "System" && named.Name == "Object"))
+            {
+                writer.Write(" : ");
+                didWriteColon = true;
+                Write(metadataType.BaseType);
+            }
+        }
+
         public void Write(IMetadataType metadataType)
         {
             switch (metadataType)
@@ -476,6 +489,7 @@ namespace ApiContractGenerator
 
             writer.Write("class ");
             WriteNameAndGenericSignature(metadataClass);
+            WriteBaseTypeAndInterfaces(metadataClass);
             writer.WriteLine();
             WriteTypeMembers(metadataClass);
         }
@@ -494,6 +508,7 @@ namespace ApiContractGenerator
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
             WriteNameAndGenericSignature(metadataInterface);
+            WriteBaseTypeAndInterfaces(metadataInterface);
             writer.WriteLine();
             WriteTypeMembers(metadataInterface);
         }
@@ -611,18 +626,35 @@ namespace ApiContractGenerator
                 return new ImmutableNode<string>(array.ElementType.Accept(this), ArraySuffixesByDimension[array.Dimensions], null);
             }
 
+            private static string TrimGenericArity(string typeName)
+            {
+                var index = typeName.LastIndexOf('`');
+                return index == -1 ? typeName : typeName.Substring(0, index);
+            }
 
             public ImmutableNode<string> Visit(NamedTypeReference namedTypeReference)
             {
-                return new ImmutableNode<string>(
-                    new ImmutableNode<string>(null, namedTypeReference.Namespace, null),
-                    ".",
-                    new ImmutableNode<string>(null, namedTypeReference.Name, null));
+                var nameNode = new ImmutableNode<string>(null, TrimGenericArity(namedTypeReference.Name), null);
+                return string.IsNullOrEmpty(namedTypeReference.Namespace) ? nameNode :
+                    new ImmutableNode<string>(new ImmutableNode<string>(null, namedTypeReference.Namespace, null), ".", nameNode);
             }
 
             public ImmutableNode<string> Accept(GenericParameterTypeReference genericParameterTypeReference)
             {
                 return new ImmutableNode<string>(null, genericParameterTypeReference.Name, null);
+            }
+
+            public ImmutableNode<string> Visit(GenericInstantiationTypeReference genericInstantiationTypeReference)
+            {
+                var args = genericInstantiationTypeReference.GenericTypeArguments;
+                var current = new ImmutableNode<string>(args[args.Count - 1].Accept(this), ">", null);
+
+                for (var i = args.Count - 2; i >= 0; i--)
+                {
+                    current = new ImmutableNode<string>(args[i].Accept(this), ", ", current);
+                }
+
+                return new ImmutableNode<string>(genericInstantiationTypeReference.TypeDefinition.Accept(this), "<", current);
             }
         }
     }

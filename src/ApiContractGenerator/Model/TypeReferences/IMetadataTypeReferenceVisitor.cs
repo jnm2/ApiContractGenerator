@@ -6,5 +6,6 @@ namespace ApiContractGenerator.Model.TypeReferences
         T Visit(PrimitiveTypeReference primitiveTypeReference);
         T Visit(NamedTypeReference namedTypeReference);
         T Accept(GenericParameterTypeReference genericParameterTypeReference);
+        T Visit(GenericInstantiationTypeReference genericInstantiationTypeReference);
     }
 }

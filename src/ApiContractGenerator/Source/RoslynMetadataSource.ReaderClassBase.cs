@@ -76,6 +76,41 @@ namespace ApiContractGenerator.Source
                     : GenericContext.TypeParameters;
 
 
+
+            private MetadataTypeReference baseType;
+            private bool isBaseTypeValid;
+            public MetadataTypeReference BaseType
+            {
+                get
+                {
+                    if (!isBaseTypeValid)
+                    {
+                        if (!Definition.BaseType.IsNil)
+                        {
+                            switch (Definition.BaseType.Kind)
+                            {
+                                case HandleKind.TypeReference:
+                                    var baseTypeReference = Reader.GetTypeReference((TypeReferenceHandle)Definition.BaseType);
+                                    baseType = new NamedTypeReference(Reader.GetString(baseTypeReference.Namespace), Reader.GetString(baseTypeReference.Name));
+                                    break;
+                                case HandleKind.TypeDefinition:
+                                    var baseTypeDefinition = Reader.GetTypeDefinition((TypeDefinitionHandle)Definition.BaseType);
+                                    baseType = new NamedTypeReference(Reader.GetString(baseTypeDefinition.Namespace), Reader.GetString(baseTypeDefinition.Name));
+                                    break;
+                                case HandleKind.TypeSpecification:
+                                    var baseTypeSpecification = Reader.GetTypeSpecification((TypeSpecificationHandle)Definition.BaseType);
+                                    baseType = baseTypeSpecification.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
+                                    break;
+                                default:
+                                    throw new NotImplementedException();
+                            }
+                        }
+                        isBaseTypeValid = true;
+                    }
+                    return baseType;
+                }
+            }
+
             private IReadOnlyList<IMetadataField> fields;
             public IReadOnlyList<IMetadataField> Fields
             {

@@ -38,7 +38,7 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference GetGenericInstantiation(MetadataTypeReference genericType, ImmutableArray<MetadataTypeReference> typeArguments)
             {
-                throw new NotImplementedException();
+                return new GenericInstantiationTypeReference((NamedTypeReference)genericType, typeArguments);
             }
 
             public MetadataTypeReference GetArrayType(MetadataTypeReference elementType, ArrayShape shape)

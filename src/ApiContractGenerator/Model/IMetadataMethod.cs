@@ -3,8 +3,10 @@ using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Model
 {
-    public interface IMetadataMethod : IMetadataMember
+    public interface IMetadataMethod : IMetadataSymbol
     {
+        MetadataVisibility Visibility { get; }
+        bool IsStatic { get; }
         IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters { get; }
         bool IsAbstract { get; }
         bool IsOverride { get; }

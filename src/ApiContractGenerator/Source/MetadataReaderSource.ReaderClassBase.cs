@@ -119,6 +119,40 @@ namespace ApiContractGenerator.Source
                 }
             }
 
+            private IReadOnlyList<IMetadataProperty> properties;
+            public IReadOnlyList<IMetadataProperty> Properties
+            {
+                get
+                {
+                    if (properties == null)
+                    {
+                        var r = new List<IMetadataProperty>();
+
+                        foreach (var handle in Definition.GetProperties())
+                        {
+                            var definition = Reader.GetPropertyDefinition(handle);
+                            var accessors = definition.GetAccessors();
+                            var visibleGetter = accessors.Getter.IsNil ? null : GetVisibleMethod(accessors.Getter);
+                            var visibleSetter = accessors.Setter.IsNil ? null : GetVisibleMethod(accessors.Setter);
+                            if (visibleGetter == null && visibleSetter == null) continue;
+
+                            r.Add(new ReaderProperty(Reader, definition, GenericContext, visibleGetter, visibleSetter));
+                        }
+
+                        properties = r;
+                    }
+                    return properties;
+                }
+            }
+
+            private IMetadataMethod GetVisibleMethod(MethodDefinitionHandle handle)
+            {
+                var methods = Methods;
+                var index = visibleMethodHandles.IndexOf(handle);
+                return index == -1 ? null : methods[index];
+            }
+
+            private List<MethodDefinitionHandle> visibleMethodHandles;
             private IReadOnlyList<IMetadataMethod> methods;
             public IReadOnlyList<IMetadataMethod> Methods
             {
@@ -127,6 +161,7 @@ namespace ApiContractGenerator.Source
                     if (methods == null)
                     {
                         var r = new List<IMetadataMethod>();
+                        visibleMethodHandles = new List<MethodDefinitionHandle>();
 
                         foreach (var handle in Definition.GetMethods())
                         {
@@ -137,6 +172,7 @@ namespace ApiContractGenerator.Source
                                 case MethodAttributes.Family:
                                 case MethodAttributes.FamORAssem:
                                     r.Add(new ReaderMethod(Reader, definition, GenericContext));
+                                    visibleMethodHandles.Add(handle);
                                     break;
                             }
                         }

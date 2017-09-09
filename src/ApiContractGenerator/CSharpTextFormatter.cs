@@ -9,7 +9,7 @@ using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator
 {
-    public sealed class CSharpTextFormatter : IMetadataWriter
+    public sealed partial class CSharpTextFormatter : IMetadataWriter
     {
         private readonly IndentedTextWriter writer;
 
@@ -420,10 +420,77 @@ namespace ApiContractGenerator
             }
         }
 
+        private void WriteMethodModifiers(MethodModifiers modifiers, bool declaringTypeIsInterface)
+        {
+            if (!(declaringTypeIsInterface && modifiers.Visibility == MetadataVisibility.Public))
+                WriteVisibility(modifiers.Visibility);
+
+            if (modifiers.Static)
+                writer.Write("static ");
+            if (modifiers.Abstract && !declaringTypeIsInterface)
+                writer.Write("abstract ");
+            if (modifiers.Virtual && !(modifiers.Override || modifiers.Abstract || modifiers.Final))
+                writer.Write("virtual ");
+            if (modifiers.Final && modifiers.Override)
+                writer.Write("sealed ");
+            if (modifiers.Override)
+                writer.Write("override ");
+        }
+
+        public void Write(IMetadataProperty metadataProperty, IMetadataType declaringType, string currentNamespace)
+        {
+            var modifiers = MethodModifiers.CombineAccessors(metadataProperty.GetAccessor, metadataProperty.SetAccessor);
+            var declaringTypeIsInterface = declaringType is IMetadataInterface;
+            WriteMethodModifiers(modifiers, declaringTypeIsInterface);
+
+            Write(metadataProperty.PropertyType, currentNamespace);
+            writer.Write(' ');
+            writer.Write(metadataProperty.Name);
+
+            if (metadataProperty.ParameterTypes.Count != 0)
+            {
+                writer.Write('[');
+
+                if (metadataProperty.GetAccessor != null)
+                {
+                    WriteParameters(metadataProperty.GetAccessor.Parameters, currentNamespace);
+                }
+                else
+                {
+                    var indexParameter = new IMetadataParameter[metadataProperty.SetAccessor.Parameters.Count - 1];
+                    for (var i = 0; i < indexParameter.Length; i++)
+                        indexParameter[i] = metadataProperty.SetAccessor.Parameters[i];
+                    WriteParameters(indexParameter, currentNamespace);
+                }
+
+                writer.Write(']');
+            }
+
+            writer.Write(" { ");
+
+            if (metadataProperty.GetAccessor != null)
+            {
+                WriteMethodModifiers(MethodModifiers.FromMethod(metadataProperty.GetAccessor).Except(modifiers), declaringTypeIsInterface);
+                writer.Write("get; ");
+            }
+
+            if (metadataProperty.SetAccessor != null)
+            {
+                WriteMethodModifiers(MethodModifiers.FromMethod(metadataProperty.SetAccessor).Except(modifiers), declaringTypeIsInterface);
+                writer.Write("set; ");
+            }
+
+            writer.WriteLine('}');
+
+            if (metadataProperty.DefaultValue != null)
+            {
+                writer.WriteLine(" = ");
+                Write(metadataProperty.DefaultValue);
+            }
+        }
+
         private void WriteParameters(IReadOnlyList<IMetadataParameter> parameters, string currentNamespace)
         {
-            writer.Write('(');
-
             for (var i = 0; i < parameters.Count; i++)
             {
                 if (i != 0) writer.Write(", ");
@@ -449,26 +516,11 @@ namespace ApiContractGenerator
                     Write(metadataParameter.DefaultValue);
                 }
             }
-
-            writer.Write(')');
         }
 
         public void Write(IMetadataMethod metadataMethod, IMetadataType declaringType, string currentNamespace)
         {
-            var isInterface = declaringType is IMetadataInterface;
-            if (!(isInterface && metadataMethod.Visibility == MetadataVisibility.Public))
-                WriteVisibility(metadataMethod.Visibility);
-
-            if (metadataMethod.IsStatic)
-                writer.Write("static ");
-            if (metadataMethod.IsAbstract && !isInterface)
-                writer.Write("abstract ");
-            if (metadataMethod.IsVirtual && !(metadataMethod.IsOverride || metadataMethod.IsAbstract || metadataMethod.IsFinal))
-                writer.Write("virtual ");
-            if (metadataMethod.IsFinal && metadataMethod.IsOverride)
-                writer.Write("sealed ");
-            if (metadataMethod.IsOverride)
-                writer.Write("override ");
+            WriteMethodModifiers(MethodModifiers.FromMethod(metadataMethod), declaringType is IMetadataInterface);
 
             if (metadataMethod.Name == ".ctor")
             {
@@ -482,8 +534,9 @@ namespace ApiContractGenerator
             }
 
             WriteGenericSignature(metadataMethod.GenericTypeParameters);
+            writer.Write('(');
             WriteParameters(metadataMethod.Parameters, currentNamespace);
-            writer.WriteLine(';');
+            writer.WriteLine(");");
         }
 
         private void WriteTypeMembers(IMetadataType metadataType, string currentNamespace)
@@ -507,7 +560,18 @@ namespace ApiContractGenerator
                 }
             }
 
-            foreach (var method in metadataType.Methods
+            var unusedMethods = new HashSet<IMetadataMethod>(metadataType.Methods);
+
+            foreach (var property in metadataType.Properties
+                .OrderByDescending(_ => (_.GetAccessor ?? _.SetAccessor).IsStatic)
+                .ThenBy(_ => _.Name))
+            {
+                if (property.GetAccessor != null) unusedMethods.Remove(property.GetAccessor);
+                if (property.SetAccessor != null) unusedMethods.Remove(property.SetAccessor);
+                Write(property, metadataType, currentNamespace);
+            }
+
+            foreach (var method in unusedMethods
                 .OrderByDescending(_ => _.IsStatic)
                 .ThenByDescending(_ => _.Name == ".ctor")
                 .ThenBy(_ => _.Name))
@@ -627,8 +691,9 @@ namespace ApiContractGenerator
             Write(metadataDelegate.ReturnType, currentNamespace);
             writer.Write(' ');
             WriteTypeNameAndGenericSignature(metadataDelegate);
+            writer.Write('(');
             WriteParameters(metadataDelegate.Parameters, currentNamespace);
-            writer.WriteLine(';');
+            writer.WriteLine(");");
         }
 
         private void Write(MetadataTypeReference typeReference, string currentNamespace)

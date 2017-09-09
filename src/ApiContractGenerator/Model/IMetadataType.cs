@@ -10,6 +10,7 @@ namespace ApiContractGenerator.Model
         MetadataTypeReference BaseType { get; }
         IReadOnlyList<MetadataTypeReference> InterfaceImplementations { get; }
         IReadOnlyList<IMetadataField> Fields { get; }
+        IReadOnlyList<IMetadataProperty> Properties { get; }
         IReadOnlyList<IMetadataMethod> Methods { get; }
         IReadOnlyList<IMetadataType> NestedTypes { get; }
     }

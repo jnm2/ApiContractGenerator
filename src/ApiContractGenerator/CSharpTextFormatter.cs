@@ -61,9 +61,18 @@ namespace ApiContractGenerator
             else
             {
                 var genericSuffixIndex = type.Name.LastIndexOf('`');
-                var buffer = new char[genericSuffixIndex];
-                type.Name.CopyTo(0, buffer, 0, buffer.Length);
-                writer.Write(buffer);
+                if (genericSuffixIndex == -1)
+                {
+                    // Nested types have their own copies of the declaring type's generic parameters.
+                    // They only have a generic arity suffix if they have an additional generic parameter that the declaring type does not have.
+                    writer.Write(type.Name);
+                }
+                else
+                {
+                    var buffer = new char[genericSuffixIndex];
+                    type.Name.CopyTo(0, buffer, 0, buffer.Length);
+                    writer.Write(buffer);
+                }
                 WriteGenericSignature(type.GenericTypeParameters);
             }
         }

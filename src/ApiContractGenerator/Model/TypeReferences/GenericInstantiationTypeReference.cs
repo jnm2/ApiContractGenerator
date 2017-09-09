@@ -4,10 +4,10 @@ namespace ApiContractGenerator.Model.TypeReferences
 {
     public sealed class GenericInstantiationTypeReference : MetadataTypeReference
     {
-        public NamedTypeReference TypeDefinition { get; }
+        public NamespaceTypeReference TypeDefinition { get; }
         public IReadOnlyList<MetadataTypeReference> GenericTypeArguments { get; }
 
-        public GenericInstantiationTypeReference(NamedTypeReference typeDefinition, IReadOnlyList<MetadataTypeReference> genericTypeArguments)
+        public GenericInstantiationTypeReference(NamespaceTypeReference typeDefinition, IReadOnlyList<MetadataTypeReference> genericTypeArguments)
         {
             TypeDefinition = typeDefinition;
             GenericTypeArguments = genericTypeArguments;

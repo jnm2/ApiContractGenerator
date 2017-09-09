@@ -67,16 +67,26 @@ namespace ApiContractGenerator.Source
             {
                 case HandleKind.TypeReference:
                     var baseTypeReference = reader.GetTypeReference((TypeReferenceHandle)handle);
-                    return new NamedTypeReference(reader.GetString(baseTypeReference.Namespace), reader.GetString(baseTypeReference.Name));
+                    return new NamespaceTypeReference(reader.GetString(baseTypeReference.Namespace), reader.GetString(baseTypeReference.Name));
                 case HandleKind.TypeDefinition:
-                    var baseTypeDefinition = reader.GetTypeDefinition((TypeDefinitionHandle)handle);
-                    return new NamedTypeReference(reader.GetString(baseTypeDefinition.Namespace), reader.GetString(baseTypeDefinition.Name));
+                    return GetTypeFromTypeDefinitionHandle(reader, (TypeDefinitionHandle)handle);
                 case HandleKind.TypeSpecification:
                     var baseTypeSpecification = reader.GetTypeSpecification((TypeSpecificationHandle)handle);
                     return baseTypeSpecification.DecodeSignature(SignatureTypeProvider.Instance, genericContext);
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private static MetadataTypeReference GetTypeFromTypeDefinitionHandle(MetadataReader reader, TypeDefinitionHandle handle)
+        {
+            var baseTypeDefinition = reader.GetTypeDefinition(handle);
+
+            var declaringType = baseTypeDefinition.GetDeclaringType();
+            if (!declaringType.IsNil)
+                return new NestedTypeReference(GetTypeFromTypeDefinitionHandle(reader, declaringType), reader.GetString(baseTypeDefinition.Name));
+
+            return new NamespaceTypeReference(reader.GetString(baseTypeDefinition.Namespace), reader.GetString(baseTypeDefinition.Name));
         }
     }
 }

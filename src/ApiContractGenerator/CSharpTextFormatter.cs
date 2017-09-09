@@ -446,7 +446,7 @@ namespace ApiContractGenerator
             var didWriteColon = false;
 
             if (metadataType.BaseType != null &&
-                !(metadataType is IMetadataClass && metadataType.BaseType is NamedTypeReference named && named.Namespace == "System" && named.Name == "Object"))
+                !(metadataType is IMetadataClass && metadataType.BaseType is NamespaceTypeReference named && named.Namespace == "System" && named.Name == "Object"))
             {
                 writer.Write(" : ");
                 didWriteColon = true;
@@ -647,11 +647,11 @@ namespace ApiContractGenerator
                 return index == -1 ? typeName : typeName.Substring(0, index);
             }
 
-            public ImmutableNode<string> Visit(NamedTypeReference namedTypeReference)
+            public ImmutableNode<string> Visit(NamespaceTypeReference namespaceTypeReference)
             {
-                var nameNode = new ImmutableNode<string>(null, TrimGenericArity(namedTypeReference.Name), null);
-                return string.IsNullOrEmpty(namedTypeReference.Namespace) ? nameNode :
-                    new ImmutableNode<string>(new ImmutableNode<string>(null, namedTypeReference.Namespace, null), ".", nameNode);
+                var nameNode = new ImmutableNode<string>(null, TrimGenericArity(namespaceTypeReference.Name), null);
+                return string.IsNullOrEmpty(namespaceTypeReference.Namespace) ? nameNode :
+                    new ImmutableNode<string>(new ImmutableNode<string>(null, namespaceTypeReference.Namespace, null), ".", nameNode);
             }
 
             public ImmutableNode<string> Accept(GenericParameterTypeReference genericParameterTypeReference)
@@ -670,6 +670,11 @@ namespace ApiContractGenerator
                 }
 
                 return new ImmutableNode<string>(genericInstantiationTypeReference.TypeDefinition.Accept(this), "<", current);
+            }
+
+            public ImmutableNode<string> Visit(NestedTypeReference nestedTypeReference)
+            {
+                return new ImmutableNode<string>(nestedTypeReference.DeclaringType.Accept(this), ".", new ImmutableNode<string>(null, nestedTypeReference.Name, null));
             }
         }
     }

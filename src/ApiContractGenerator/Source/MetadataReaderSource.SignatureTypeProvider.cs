@@ -21,13 +21,13 @@ namespace ApiContractGenerator.Source
             public MetadataTypeReference GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
             {
                 var definition = reader.GetTypeDefinition(handle);
-                return new NamedTypeReference(reader.GetString(definition.Namespace), reader.GetString(definition.Name));
+                return new NamespaceTypeReference(reader.GetString(definition.Namespace), reader.GetString(definition.Name));
             }
 
             public MetadataTypeReference GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
             {
                 var reference = reader.GetTypeReference(handle);
-                return new NamedTypeReference(reader.GetString(reference.Namespace), reader.GetString(reference.Name));
+                return new NamespaceTypeReference(reader.GetString(reference.Namespace), reader.GetString(reference.Name));
             }
 
             public MetadataTypeReference GetSZArrayType(MetadataTypeReference elementType)
@@ -37,7 +37,7 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference GetGenericInstantiation(MetadataTypeReference genericType, ImmutableArray<MetadataTypeReference> typeArguments)
             {
-                return new GenericInstantiationTypeReference((NamedTypeReference)genericType, typeArguments);
+                return new GenericInstantiationTypeReference((NamespaceTypeReference)genericType, typeArguments);
             }
 
             public MetadataTypeReference GetArrayType(MetadataTypeReference elementType, ArrayShape shape)

@@ -54,7 +54,7 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference GetPointerType(MetadataTypeReference elementType)
             {
-                throw new NotImplementedException();
+                return new PointerTypeReference(elementType);
             }
 
             public MetadataTypeReference GetFunctionPointerType(MethodSignature<MetadataTypeReference> signature)

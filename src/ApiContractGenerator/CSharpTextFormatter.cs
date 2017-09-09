@@ -888,6 +888,11 @@ namespace ApiContractGenerator
             {
                 return new ImmutableNode<string>(nestedTypeReference.DeclaringType.Accept(this), ".", new ImmutableNode<string>(null, nestedTypeReference.Name, null));
             }
+
+            public ImmutableNode<string> Visit(PointerTypeReference pointerTypeReference)
+            {
+                return new ImmutableNode<string>(pointerTypeReference.ElementType.Accept(this), "*", null);
+            }
         }
     }
 }

@@ -9,5 +9,6 @@ namespace ApiContractGenerator.Model.TypeReferences
         T Visit(GenericInstantiationTypeReference genericInstantiationTypeReference);
         T Visit(ByRefTypeReference byRefTypeReference);
         T Visit(NestedTypeReference nestedTypeReference);
+        T Visit(PointerTypeReference pointerTypeReference);
     }
 }

@@ -556,7 +556,6 @@ namespace ApiContractGenerator
                     }
                     else
                     {
-                        writer.Write("[Out] ");
                         Write(metadataParameter.ParameterType, currentNamespace);
                     }
                 }

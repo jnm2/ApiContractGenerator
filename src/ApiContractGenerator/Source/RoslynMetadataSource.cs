@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using ApiContractGenerator.Model;
+using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
 {
@@ -56,6 +57,25 @@ namespace ApiContractGenerator.Source
                     namespaces = r;
                 }
                 return namespaces;
+            }
+        }
+
+
+        private static MetadataTypeReference GetTypeFromEntityHandle(MetadataReader reader, GenericContext genericContext, EntityHandle handle)
+        {
+            switch (handle.Kind)
+            {
+                case HandleKind.TypeReference:
+                    var baseTypeReference = reader.GetTypeReference((TypeReferenceHandle)handle);
+                    return new NamedTypeReference(reader.GetString(baseTypeReference.Namespace), reader.GetString(baseTypeReference.Name));
+                case HandleKind.TypeDefinition:
+                    var baseTypeDefinition = reader.GetTypeDefinition((TypeDefinitionHandle)handle);
+                    return new NamedTypeReference(reader.GetString(baseTypeDefinition.Namespace), reader.GetString(baseTypeDefinition.Name));
+                case HandleKind.TypeSpecification:
+                    var baseTypeSpecification = reader.GetTypeSpecification((TypeSpecificationHandle)handle);
+                    return baseTypeSpecification.DecodeSignature(SignatureTypeProvider.Instance, genericContext);
+                default:
+                    throw new NotImplementedException();
             }
         }
     }

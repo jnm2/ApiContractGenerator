@@ -86,28 +86,31 @@ namespace ApiContractGenerator.Source
                     if (!isBaseTypeValid)
                     {
                         if (!Definition.BaseType.IsNil)
-                        {
-                            switch (Definition.BaseType.Kind)
-                            {
-                                case HandleKind.TypeReference:
-                                    var baseTypeReference = Reader.GetTypeReference((TypeReferenceHandle)Definition.BaseType);
-                                    baseType = new NamedTypeReference(Reader.GetString(baseTypeReference.Namespace), Reader.GetString(baseTypeReference.Name));
-                                    break;
-                                case HandleKind.TypeDefinition:
-                                    var baseTypeDefinition = Reader.GetTypeDefinition((TypeDefinitionHandle)Definition.BaseType);
-                                    baseType = new NamedTypeReference(Reader.GetString(baseTypeDefinition.Namespace), Reader.GetString(baseTypeDefinition.Name));
-                                    break;
-                                case HandleKind.TypeSpecification:
-                                    var baseTypeSpecification = Reader.GetTypeSpecification((TypeSpecificationHandle)Definition.BaseType);
-                                    baseType = baseTypeSpecification.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
-                                    break;
-                                default:
-                                    throw new NotImplementedException();
-                            }
-                        }
+                            baseType = GetTypeFromEntityHandle(Reader, GenericContext, Definition.BaseType);
                         isBaseTypeValid = true;
                     }
                     return baseType;
+                }
+            }
+
+            private IReadOnlyList<MetadataTypeReference> interfaceImplementations;
+            public IReadOnlyList<MetadataTypeReference> InterfaceImplementations
+            {
+                get
+                {
+                    if (interfaceImplementations == null)
+                    {
+                        var handles = Definition.GetInterfaceImplementations();
+                        var r = new List<MetadataTypeReference>(handles.Count);
+
+                        foreach (var handle in handles)
+                        {
+                            r.Add(GetTypeFromEntityHandle(Reader, genericContext, Reader.GetInterfaceImplementation(handle).Interface));
+                        }
+
+                        interfaceImplementations = r;
+                    }
+                    return interfaceImplementations;
                 }
             }
 

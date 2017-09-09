@@ -8,6 +8,7 @@ namespace ApiContractGenerator.Model
         MetadataVisibility Visibility { get; }
         IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters { get; }
         MetadataTypeReference BaseType { get; }
+        IReadOnlyList<MetadataTypeReference> InterfaceImplementations { get; }
         IReadOnlyList<IMetadataField> Fields { get; }
         IReadOnlyList<IMetadataType> NestedTypes { get; }
     }

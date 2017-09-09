@@ -452,6 +452,21 @@ namespace ApiContractGenerator
                 didWriteColon = true;
                 Write(metadataType.BaseType);
             }
+
+            foreach (var interfaceImplementation in metadataType.InterfaceImplementations)
+            {
+                if (!didWriteColon)
+                {
+                    writer.Write(" : ");
+                    didWriteColon = true;
+                }
+                else
+                {
+                    writer.Write(", ");
+                }
+
+                Write(interfaceImplementation);
+            }
         }
 
         public void Write(IMetadataType metadataType)

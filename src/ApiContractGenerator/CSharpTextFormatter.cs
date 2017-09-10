@@ -575,6 +575,34 @@ namespace ApiContractGenerator
             }
         }
 
+        private static readonly IReadOnlyDictionary<string, string> OperatorSyntaxByMethodName = new Dictionary<string, string>
+        {
+            ["op_UnaryPlus"] = "operator +",
+            ["op_UnaryNegation"] = "operator -",
+            ["op_LogicalNot"] = "operator !",
+            ["op_OnesComplement"] = "operator ~",
+            ["op_Increment"] = "operator ++",
+            ["op_Decrement"] = "operator --",
+            ["op_True"] = "operator true",
+            ["op_False"] = "operator false",
+            ["op_Addition"] = "operator +",
+            ["op_Subtraction"] = "operator -",
+            ["op_Multiply"] = "operator *",
+            ["op_Division"] = "operator /",
+            ["op_Modulus"] = "operator %",
+            ["op_BitwiseAnd"] = "operator &",
+            ["op_BitwiseOr"] = "operator |",
+            ["op_ExclusiveOr"] = "operator ^",
+            ["op_LeftShift"] = "operator <<",
+            ["op_RightShift"] = "operator >>",
+            ["op_Equality"] = "operator ==",
+            ["op_Inequality"] = "operator !=",
+            ["op_LessThan"] = "operator <",
+            ["op_LessThanOrEqual"] = "operator <=",
+            ["op_GreaterThan"] = "operator >",
+            ["op_GreaterThanOrEqual"] = "operator >="
+        };
+
         public void Write(IMetadataMethod metadataMethod, IMetadataType declaringType, string currentNamespace)
         {
             WriteMethodModifiers(MethodModifiers.FromMethod(metadataMethod), declaringType is IMetadataInterface);
@@ -585,9 +613,22 @@ namespace ApiContractGenerator
             }
             else
             {
-                Write(metadataMethod.ReturnType, currentNamespace);
-                writer.Write(' ');
-                writer.Write(metadataMethod.Name);
+                switch (metadataMethod.Name)
+                {
+                    case "op_Explicit":
+                        writer.Write("explicit operator ");
+                        Write(metadataMethod.ReturnType, currentNamespace);
+                        break;
+                    case "op_Implicit":
+                        writer.Write("implicit operator ");
+                        Write(metadataMethod.ReturnType, currentNamespace);
+                        break;
+                    default:
+                        Write(metadataMethod.ReturnType, currentNamespace);
+                        writer.Write(' ');
+                        writer.Write(OperatorSyntaxByMethodName.TryGetValue(metadataMethod.Name, out var syntax) ? syntax : metadataMethod.Name);
+                        break;
+                }
             }
 
             WriteGenericSignature(metadataMethod.GenericTypeParameters);

@@ -86,7 +86,10 @@ namespace ApiContractGenerator
             for (var i = numToSkip; i < genericParameters.Count; i++)
             {
                 if (i != numToSkip) writer.Write(", ");
-                writer.Write(genericParameters[i].Name);
+                var parameter = genericParameters[i];
+                if (parameter.IsContravariant) writer.Write("in ");
+                if (parameter.IsCovariant) writer.Write("out ");
+                writer.Write(parameter.Name);
             }
 
             writer.Write('>');

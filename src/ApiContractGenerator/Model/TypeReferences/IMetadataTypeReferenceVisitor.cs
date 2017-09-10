@@ -4,7 +4,7 @@ namespace ApiContractGenerator.Model.TypeReferences
     {
         T Visit(ArrayTypeReference array);
         T Visit(PrimitiveTypeReference primitiveTypeReference);
-        T Visit(NamespaceTypeReference namespaceTypeReference);
+        T Visit(TopLevelTypeReference topLevelTypeReference);
         T Accept(GenericParameterTypeReference genericParameterTypeReference);
         T Visit(GenericInstantiationTypeReference genericInstantiationTypeReference);
         T Visit(ByRefTypeReference byRefTypeReference);

@@ -20,14 +20,12 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
             {
-                var definition = reader.GetTypeDefinition(handle);
-                return new NamespaceTypeReference(reader.GetString(definition.Namespace), reader.GetString(definition.Name));
+                return GetTypeFromTypeDefinitionHandle(reader, handle);
             }
 
             public MetadataTypeReference GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
             {
-                var reference = reader.GetTypeReference(handle);
-                return new NamespaceTypeReference(reader.GetString(reference.Namespace), reader.GetString(reference.Name));
+                return GetTypeFromTypeReferenceHandle(reader, handle);
             }
 
             public MetadataTypeReference GetSZArrayType(MetadataTypeReference elementType)

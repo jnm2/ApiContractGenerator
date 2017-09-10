@@ -125,9 +125,9 @@ namespace ApiContractGenerator
                     foreach (var type in typeConstraints)
                     {
                         if (genericParameter.HasNotNullableValueTypeConstraint
-                            && type is NamespaceTypeReference named
-                            && named.Name == "ValueType"
-                            && named.Namespace == "System")
+                            && type is TopLevelTypeReference topLevel
+                            && topLevel.Name == "ValueType"
+                            && topLevel.Namespace == "System")
                         {
                             continue;
                         }
@@ -767,8 +767,12 @@ namespace ApiContractGenerator
         {
             var didWriteColon = false;
 
-            if (metadataType.BaseType != null &&
-                !(metadataType is IMetadataClass && metadataType.BaseType is NamespaceTypeReference named && named.Namespace == "System" && named.Name == "Object"))
+            if (metadataType.BaseType != null
+                && !(
+                    metadataType is IMetadataClass
+                    && metadataType.BaseType is TopLevelTypeReference topLevel
+                    && topLevel.Namespace == "System"
+                    && topLevel.Name == "Object"))
             {
                 writer.Write(" : ");
                 didWriteColon = true;
@@ -975,11 +979,11 @@ namespace ApiContractGenerator
                 return new ImmutableNode<string>(array.ElementType.Accept(this), ArraySuffixesByDimension[array.Dimensions], null);
             }
 
-            public ImmutableNode<string> Visit(NamespaceTypeReference namespaceTypeReference)
+            public ImmutableNode<string> Visit(TopLevelTypeReference topLevelTypeReference)
             {
-                var nameNode = new ImmutableNode<string>(null, TrimGenericArity(namespaceTypeReference.Name), null);
-                return currentNamespace == namespaceTypeReference.Namespace || string.IsNullOrEmpty(namespaceTypeReference.Namespace) ? nameNode :
-                    new ImmutableNode<string>(new ImmutableNode<string>(null, namespaceTypeReference.Namespace, null), ".", nameNode);
+                var nameNode = new ImmutableNode<string>(null, TrimGenericArity(topLevelTypeReference.Name), null);
+                return currentNamespace == topLevelTypeReference.Namespace || string.IsNullOrEmpty(topLevelTypeReference.Namespace) ? nameNode :
+                    new ImmutableNode<string>(new ImmutableNode<string>(null, topLevelTypeReference.Namespace, null), ".", nameNode);
             }
 
             public ImmutableNode<string> Accept(GenericParameterTypeReference genericParameterTypeReference)
@@ -992,8 +996,9 @@ namespace ApiContractGenerator
                 var args = genericInstantiationTypeReference.GenericTypeArguments;
 
                 if (args.Count == 1
-                    && genericInstantiationTypeReference.TypeDefinition is NamespaceTypeReference namespaceType
-                    && namespaceType.Name == "Nullable`1" && namespaceType.Namespace == "System")
+                    && genericInstantiationTypeReference.TypeDefinition is TopLevelTypeReference topLevel
+                    && topLevel.Name == "Nullable`1"
+                    && topLevel.Namespace == "System")
                 {
                     return new ImmutableNode<string>(args[0].Accept(this), "?", null);
                 }
@@ -1022,9 +1027,9 @@ namespace ApiContractGenerator
                 var args = genericInstantiationTypeReference.GenericTypeArguments;
                 return args.Count >= minArgs
                     && args.Count <= 8
-                    && genericInstantiationTypeReference.TypeDefinition is NamespaceTypeReference namespaceType
-                    && namespaceType.Name == ValueTupleNamesByArity[args.Count]
-                    && namespaceType.Namespace == "System";
+                    && genericInstantiationTypeReference.TypeDefinition is TopLevelTypeReference topLevel
+                    && topLevel.Name == ValueTupleNamesByArity[args.Count]
+                    && topLevel.Namespace == "System";
             }
 
             private bool TryUseTupleSyntax(IReadOnlyList<MetadataTypeReference> args, out ImmutableNode<string> tupleSyntax)

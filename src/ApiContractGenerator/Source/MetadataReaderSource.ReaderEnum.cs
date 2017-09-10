@@ -9,7 +9,7 @@ namespace ApiContractGenerator.Source
     {
         private sealed class ReaderEnum : ReaderClassBase, IMetadataEnum
         {
-            public ReaderEnum(MetadataReader reader, TypeDefinition definition, GenericContext parentGenericContext) : base(reader, definition, parentGenericContext)
+            public ReaderEnum(MetadataReader reader, TypeDefinition definition) : base(reader, definition)
             {
             }
 

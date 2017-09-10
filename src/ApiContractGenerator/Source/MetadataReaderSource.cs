@@ -43,7 +43,7 @@ namespace ApiContractGenerator.Source
                         {
                             var typeDefinition = reader.GetTypeDefinition(handle);
                             if ((typeDefinition.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.Public)
-                                externallyVisibleTypes.Add(ReaderClassBase.Create(reader, typeDefinition, GenericContext.Empty));
+                                externallyVisibleTypes.Add(ReaderClassBase.Create(reader, typeDefinition));
                         }
 
                         var metadataNamespace = new ReaderNamespace(reader, parent, definition, externallyVisibleTypes);

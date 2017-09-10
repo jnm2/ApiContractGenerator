@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
@@ -14,18 +13,25 @@ namespace ApiContractGenerator.Source
         {
             private readonly MetadataReader reader;
             private readonly MethodDefinition definition;
-            private readonly GenericContext parentGenericContext;
+            private readonly GenericContext declaringTypeGenericContext;
 
-            public ReaderMethod(MetadataReader reader, MethodDefinition definition, GenericContext parentGenericContext)
+            public ReaderMethod(MetadataReader reader, MethodDefinition definition, GenericContext declaringTypeGenericContext)
             {
                 this.reader = reader;
                 this.definition = definition;
-                this.parentGenericContext = parentGenericContext;
+                this.declaringTypeGenericContext = declaringTypeGenericContext;
             }
 
-            private GenericContext genericContext;
-            private GenericContext GenericContext => genericContext ?? (genericContext =
-                GenericContext.Create(reader, parentGenericContext, definition.GetGenericParameters()));
+            private GenericContext? genericContext;
+            private GenericContext GenericContext
+            {
+                get
+                {
+                    if (genericContext == null)
+                        genericContext = new GenericContext(declaringTypeGenericContext.TypeParameters, GetGenericParameters(reader, definition.GetGenericParameters()));
+                    return genericContext.Value;
+                }
+            }
 
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
@@ -47,10 +53,7 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            public IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters =>
-                GenericContext == null
-                    ? Array.Empty<GenericParameterTypeReference>()
-                    : GenericContext.TypeParameters;
+            public IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters => GenericContext.MethodParameters;
 
             public bool IsStatic => (definition.Attributes & MethodAttributes.Static) != 0;
             public bool IsAbstract => (definition.Attributes & MethodAttributes.Abstract) != 0;

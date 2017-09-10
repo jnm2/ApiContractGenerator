@@ -8,7 +8,7 @@ namespace ApiContractGenerator.Source
     {
         private sealed class ReaderClass : ReaderClassBase, IMetadataClass
         {
-            public ReaderClass(MetadataReader reader, TypeDefinition definition, GenericContext parentGenericContext) : base(reader, definition, parentGenericContext)
+            public ReaderClass(MetadataReader reader, TypeDefinition definition) : base(reader, definition)
             {
             }
 

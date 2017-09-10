@@ -7,7 +7,7 @@ namespace ApiContractGenerator.Source
     {
         private sealed class ReaderInterface : ReaderClassBase, IMetadataInterface
         {
-            public ReaderInterface(MetadataReader reader, TypeDefinition definition, GenericContext parentGenericContext) : base(reader, definition, parentGenericContext)
+            public ReaderInterface(MetadataReader reader, TypeDefinition definition) : base(reader, definition)
             {
             }
         }

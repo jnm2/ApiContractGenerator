@@ -13,18 +13,23 @@ namespace ApiContractGenerator.Source
         {
             protected readonly MetadataReader Reader;
             protected readonly TypeDefinition Definition;
-            private readonly GenericContext parentGenericContext;
 
-            protected ReaderClassBase(MetadataReader reader, TypeDefinition definition, GenericContext parentGenericContext)
+            protected ReaderClassBase(MetadataReader reader, TypeDefinition definition)
             {
                 Reader = reader;
                 Definition = definition;
-                this.parentGenericContext = parentGenericContext;
             }
 
-            private GenericContext genericContext;
-            protected GenericContext GenericContext => genericContext ?? (genericContext =
-                GenericContext.Create(Reader, parentGenericContext, Definition.GetGenericParameters()));
+            private GenericContext? genericContext;
+            protected GenericContext GenericContext
+            {
+                get
+                {
+                    if (genericContext == null)
+                        genericContext = new GenericContext(GetGenericParameters(Reader, Definition.GetGenericParameters()), null);
+                    return genericContext.Value;
+                }
+            }
 
             private string name;
             public string Name => name ?? (name = Reader.GetString(Definition.Name));
@@ -47,10 +52,7 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            public IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters =>
-                GenericContext == null
-                    ? Array.Empty<GenericParameterTypeReference>()
-                    : GenericContext.TypeParameters;
+            public IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters => GenericContext.TypeParameters;
 
 
 
@@ -82,7 +84,7 @@ namespace ApiContractGenerator.Source
 
                         foreach (var handle in handles)
                         {
-                            r.Add(GetTypeFromEntityHandle(Reader, genericContext, Reader.GetInterfaceImplementation(handle).Interface));
+                            r.Add(GetTypeFromEntityHandle(Reader, GenericContext, Reader.GetInterfaceImplementation(handle).Interface));
                         }
 
                         interfaceImplementations = r;
@@ -227,7 +229,7 @@ namespace ApiContractGenerator.Source
                                 case TypeAttributes.NestedPublic:
                                 case TypeAttributes.NestedFamily:
                                 case TypeAttributes.NestedFamORAssem:
-                                     r.Add(Create(Reader, definition, GenericContext));
+                                     r.Add(Create(Reader, definition));
                                     break;
                             }
                         }
@@ -259,11 +261,11 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            public static ReaderClassBase Create(MetadataReader reader, TypeDefinition typeDefinition, GenericContext parentGenericContext)
+            public static ReaderClassBase Create(MetadataReader reader, TypeDefinition typeDefinition)
             {
                 if ((typeDefinition.Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface)
                 {
-                    return new ReaderInterface(reader, typeDefinition, parentGenericContext);
+                    return new ReaderInterface(reader, typeDefinition);
                 }
 
                 if (!typeDefinition.BaseType.IsNil
@@ -271,19 +273,19 @@ namespace ApiContractGenerator.Source
                 {
                     if (baseTypeName == "Enum" && baseTypeNamespace == "System")
                     {
-                        return new ReaderEnum(reader, typeDefinition, parentGenericContext);
+                        return new ReaderEnum(reader, typeDefinition);
                     }
                     if (baseTypeName == "ValueType" && baseTypeNamespace == "System")
                     {
-                        return new ReaderStruct(reader, typeDefinition, parentGenericContext);
+                        return new ReaderStruct(reader, typeDefinition);
                     }
                     if (baseTypeName == "MulticastDelegate" && baseTypeNamespace == "System")
                     {
-                        return new ReaderDelegate(reader, typeDefinition, parentGenericContext);
+                        return new ReaderDelegate(reader, typeDefinition);
                     }
                 }
 
-                return new ReaderClass(reader, typeDefinition, parentGenericContext);
+                return new ReaderClass(reader, typeDefinition);
             }
         }
     }

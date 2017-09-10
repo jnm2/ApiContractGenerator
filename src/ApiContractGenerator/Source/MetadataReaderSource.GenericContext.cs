@@ -1,6 +1,6 @@
 using System;
 using System.Reflection.Metadata;
-using ApiContractGenerator.Model.TypeReferences;
+using ApiContractGenerator.Model;
 
 namespace ApiContractGenerator.Source
 {
@@ -8,29 +8,53 @@ namespace ApiContractGenerator.Source
     {
         private struct GenericContext
         {
-            public readonly GenericParameterTypeReference[] TypeParameters;
-            public readonly GenericParameterTypeReference[] MethodParameters;
+            public readonly IMetadataGenericTypeParameter[] TypeParameters;
+            public readonly IMetadataGenericTypeParameter[] MethodParameters;
 
-            public GenericContext(GenericParameterTypeReference[] typeParameters, GenericParameterTypeReference[] methodParameters)
+            private GenericContext(IMetadataGenericTypeParameter[] typeParameters, IMetadataGenericTypeParameter[] methodParameters)
             {
+                // ReaderGenericTypeParameter's constructor relies on the arrays we pass in being the arrays we expose.
+                // See note in FillArray.
                 TypeParameters = typeParameters;
                 MethodParameters = methodParameters;
             }
-        }
 
-        public static GenericParameterTypeReference[] GetGenericParameters(MetadataReader reader, GenericParameterHandleCollection genericParameters)
-        {
-            if (genericParameters.Count == 0) return Array.Empty<GenericParameterTypeReference>();
-
-            var r = new GenericParameterTypeReference[genericParameters.Count];
-
-            foreach (var handle in genericParameters)
+            private static void FillArray(IMetadataGenericTypeParameter[] array, GenericContext genericContext, MetadataReader reader, GenericParameterHandleCollection genericParameters)
             {
-                var genericParameter = reader.GetGenericParameter(handle);
-                r[genericParameter.Index] = new GenericParameterTypeReference(reader.GetString(genericParameter.Name));
+                foreach (var handle in genericParameters)
+                {
+                    var genericParameter = reader.GetGenericParameter(handle);
+
+                    // It's okay to pass in genericContext as we fill the array.
+                    // It's coupling to an implementation detail in the same class.
+                    array[genericParameter.Index] = new ReaderGenericTypeParameter(reader, genericParameter, genericContext);
+                }
             }
 
-            return r;
+            public static GenericContext FromType(MetadataReader reader, TypeDefinition definition)
+            {
+                var empty = Array.Empty<IMetadataGenericTypeParameter>();
+                var genericParameters = definition.GetGenericParameters();
+                if (genericParameters.Count == 0) return new GenericContext(empty, empty);
+
+                var r = new IMetadataGenericTypeParameter[genericParameters.Count];
+                var genericContext = new GenericContext(r, empty);
+                FillArray(r, genericContext, reader, genericParameters);
+
+                return genericContext;
+            }
+
+            public static GenericContext FromMethod(MetadataReader reader, GenericContext declaringTypeGenericContext, MethodDefinition definition)
+            {
+                var genericParameters = definition.GetGenericParameters();
+                if (genericParameters.Count == 0) return declaringTypeGenericContext;
+
+                var r = new IMetadataGenericTypeParameter[genericParameters.Count];
+                var genericContext = new GenericContext(declaringTypeGenericContext.TypeParameters, r);
+                FillArray(r, genericContext, reader, genericParameters);
+
+                return genericContext;
+            }
         }
     }
 }

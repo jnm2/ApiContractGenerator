@@ -7,7 +7,7 @@ namespace ApiContractGenerator.Model
     {
         MetadataVisibility Visibility { get; }
         bool IsStatic { get; }
-        IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters { get; }
+        IReadOnlyList<IMetadataGenericTypeParameter> GenericTypeParameters { get; }
         bool IsAbstract { get; }
         bool IsOverride { get; }
         bool IsFinal { get; }

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -26,7 +25,7 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (genericContext == null)
-                        genericContext = new GenericContext(GetGenericParameters(Reader, Definition.GetGenericParameters()), null);
+                        genericContext = GenericContext.FromType(Reader, Definition);
                     return genericContext.Value;
                 }
             }
@@ -52,7 +51,7 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            public IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters => GenericContext.TypeParameters;
+            public IReadOnlyList<IMetadataGenericTypeParameter> GenericTypeParameters => GenericContext.TypeParameters;
 
 
 

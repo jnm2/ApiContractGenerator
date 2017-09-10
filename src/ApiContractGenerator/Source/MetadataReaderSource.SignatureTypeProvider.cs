@@ -64,12 +64,12 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference GetGenericMethodParameter(GenericContext genericContext, int index)
             {
-                return genericContext.MethodParameters[index];
+                return new GenericParameterTypeReference(genericContext.MethodParameters[index].Name);
             }
 
             public MetadataTypeReference GetGenericTypeParameter(GenericContext genericContext, int index)
             {
-                return genericContext.TypeParameters[index];
+                return new GenericParameterTypeReference(genericContext.TypeParameters[index].Name);
             }
 
             public MetadataTypeReference GetModifiedType(MetadataTypeReference modifier, MetadataTypeReference unmodifiedType, bool isRequired)

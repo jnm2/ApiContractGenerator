@@ -28,7 +28,7 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (genericContext == null)
-                        genericContext = new GenericContext(declaringTypeGenericContext.TypeParameters, GetGenericParameters(reader, definition.GetGenericParameters()));
+                        genericContext = GenericContext.FromMethod(reader, declaringTypeGenericContext, definition);
                     return genericContext.Value;
                 }
             }
@@ -53,7 +53,7 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            public IReadOnlyList<GenericParameterTypeReference> GenericTypeParameters => GenericContext.MethodParameters;
+            public IReadOnlyList<IMetadataGenericTypeParameter> GenericTypeParameters => GenericContext.MethodParameters;
 
             public bool IsStatic => (definition.Attributes & MethodAttributes.Static) != 0;
             public bool IsAbstract => (definition.Attributes & MethodAttributes.Abstract) != 0;

@@ -77,7 +77,7 @@ namespace ApiContractGenerator
             }
         }
 
-        private void WriteGenericSignature(IReadOnlyList<GenericParameterTypeReference> genericParameters, int numToSkip)
+        private void WriteGenericSignature(IReadOnlyList<IMetadataGenericTypeParameter> genericParameters, int numToSkip)
         {
             if (numToSkip >= genericParameters.Count) return;
 
@@ -90,6 +90,56 @@ namespace ApiContractGenerator
             }
 
             writer.Write('>');
+        }
+
+        private void WriteGenericConstraints(IReadOnlyList<IMetadataGenericTypeParameter> genericParameters, string currentNamespace)
+        {
+            foreach (var genericParameter in genericParameters)
+            {
+                var typeConstraints = genericParameter.TypeConstraints;
+                if (genericParameter.HasReferenceTypeConstraint
+                    || genericParameter.HasNotNullableValueTypeConstraint
+                    || genericParameter.HasDefaultConstructorConstraint
+                    || typeConstraints.Count != 0)
+                {
+                    writer.Write(" where ");
+                    writer.Write(genericParameter.Name);
+                    writer.Write(" : ");
+
+                    var isFirst = true;
+
+                    if (genericParameter.HasReferenceTypeConstraint)
+                    {
+                        isFirst = false;
+                        writer.Write("class");
+                    }
+                    if (genericParameter.HasNotNullableValueTypeConstraint)
+                    {
+                        if (isFirst) isFirst = false; else writer.Write(", ");
+                        writer.Write("struct");
+                    }
+
+                    foreach (var type in typeConstraints)
+                    {
+                        if (genericParameter.HasNotNullableValueTypeConstraint
+                            && type is NamespaceTypeReference named
+                            && named.Name == "ValueType"
+                            && named.Namespace == "System")
+                        {
+                            continue;
+                        }
+
+                        if (isFirst) isFirst = false; else writer.Write(", ");
+                        Write(type, currentNamespace);
+                    }
+
+                    if (genericParameter.HasDefaultConstructorConstraint)
+                    {
+                        if (!isFirst) writer.Write(", ");
+                        writer.Write("new()");
+                    }
+                }
+            }
         }
 
         public void WriteStringLiteral(string literal)
@@ -634,7 +684,9 @@ namespace ApiContractGenerator
             WriteGenericSignature(metadataMethod.GenericTypeParameters, numToSkip: 0);
             writer.Write('(');
             WriteParameters(metadataMethod.Parameters, currentNamespace);
-            writer.WriteLine(");");
+            writer.Write(')');
+            WriteGenericConstraints(metadataMethod.GenericTypeParameters, currentNamespace);
+            writer.WriteLine(';');
         }
 
         private void WriteTypeMembers(IMetadataType metadataType, string currentNamespace)
@@ -758,6 +810,7 @@ namespace ApiContractGenerator
             writer.Write("class ");
             WriteTypeNameAndGenericSignature(metadataClass, declaringTypeNumGenericParameters);
             WriteBaseTypeAndInterfaces(metadataClass, currentNamespace);
+            WriteGenericConstraints(metadataClass.GenericTypeParameters, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataClass, currentNamespace);
         }

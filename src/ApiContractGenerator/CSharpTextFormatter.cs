@@ -981,6 +981,10 @@ namespace ApiContractGenerator
                 {
                     return new ImmutableNode<string>(args[0].Accept(this), "?", null);
                 }
+                if (IsValueTuple(genericInstantiationTypeReference, minArgs: 2) && TryUseTupleSyntax(args, out var tupleSyntax))
+                {
+                    return tupleSyntax;
+                }
 
                 var current = new ImmutableNode<string>(args[args.Count - 1].Accept(this), ">", null);
 
@@ -990,6 +994,47 @@ namespace ApiContractGenerator
                 }
 
                 return new ImmutableNode<string>(genericInstantiationTypeReference.TypeDefinition.Accept(this), "<", current);
+            }
+
+            private static readonly string[] ValueTupleNamesByArity =
+            {
+                null, "ValueTuple`1", "ValueTuple`2", "ValueTuple`3", "ValueTuple`4", "ValueTuple`5", "ValueTuple`6", "ValueTuple`7", "ValueTuple`8"
+            };
+
+            private static bool IsValueTuple(GenericInstantiationTypeReference genericInstantiationTypeReference, int minArgs)
+            {
+                var args = genericInstantiationTypeReference.GenericTypeArguments;
+                return args.Count >= minArgs && args.Count <= 8 && genericInstantiationTypeReference.TypeDefinition.Name == ValueTupleNamesByArity[args.Count] && genericInstantiationTypeReference.TypeDefinition.Namespace == "System";
+            }
+
+            private bool TryUseTupleSyntax(IReadOnlyList<MetadataTypeReference> args, out ImmutableNode<string> tupleSyntax)
+            {
+                var tupleElements = new List<MetadataTypeReference>(args.Count);
+
+                while (args.Count == 8)
+                {
+                    if (!(args[7] is GenericInstantiationTypeReference genericRest && IsValueTuple(genericRest, minArgs: 1)))
+                    {
+                        tupleSyntax = null;
+                        return false;
+                    }
+
+                    for (var i = 0; i < 7; i++)
+                        tupleElements.Add(args[i]);
+
+                    args = genericRest.GenericTypeArguments;
+                }
+
+                for (var i = 0; i < args.Count; i++)
+                    tupleElements.Add(args[i]);
+
+                var current = new ImmutableNode<string>(tupleElements[tupleElements.Count - 1].Accept(this), ")", null);
+
+                for (var i = tupleElements.Count - 2; i >= 0; i--)
+                    current = new ImmutableNode<string>(tupleElements[i].Accept(this), ", ", current);
+
+                tupleSyntax = new ImmutableNode<string>(null, "(", current);
+                return true;
             }
 
             public ImmutableNode<string> Visit(ByRefTypeReference byRefTypeReference)

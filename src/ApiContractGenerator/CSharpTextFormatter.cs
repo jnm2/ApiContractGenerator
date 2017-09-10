@@ -991,7 +991,9 @@ namespace ApiContractGenerator
             {
                 var args = genericInstantiationTypeReference.GenericTypeArguments;
 
-                if (args.Count == 1 && genericInstantiationTypeReference.TypeDefinition.Name == "Nullable`1" && genericInstantiationTypeReference.TypeDefinition.Namespace == "System")
+                if (args.Count == 1
+                    && genericInstantiationTypeReference.TypeDefinition is NamespaceTypeReference namespaceType
+                    && namespaceType.Name == "Nullable`1" && namespaceType.Namespace == "System")
                 {
                     return new ImmutableNode<string>(args[0].Accept(this), "?", null);
                 }
@@ -1018,7 +1020,11 @@ namespace ApiContractGenerator
             private static bool IsValueTuple(GenericInstantiationTypeReference genericInstantiationTypeReference, int minArgs)
             {
                 var args = genericInstantiationTypeReference.GenericTypeArguments;
-                return args.Count >= minArgs && args.Count <= 8 && genericInstantiationTypeReference.TypeDefinition.Name == ValueTupleNamesByArity[args.Count] && genericInstantiationTypeReference.TypeDefinition.Namespace == "System";
+                return args.Count >= minArgs
+                    && args.Count <= 8
+                    && genericInstantiationTypeReference.TypeDefinition is NamespaceTypeReference namespaceType
+                    && namespaceType.Name == ValueTupleNamesByArity[args.Count]
+                    && namespaceType.Namespace == "System";
             }
 
             private bool TryUseTupleSyntax(IReadOnlyList<MetadataTypeReference> args, out ImmutableNode<string> tupleSyntax)

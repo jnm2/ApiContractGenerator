@@ -32,7 +32,7 @@ namespace ApiContractGenerator
             writer.Indent();
 
             foreach (var type in metadataNamespace.Types.OrderBy(_ => _.Name))
-                Write(type, metadataNamespace.Name);
+                Write(type, metadataNamespace.Name, declaringTypeNumGenericParameters: 0);
 
             writer.Unindent();
             writer.WriteLine('}');
@@ -51,7 +51,7 @@ namespace ApiContractGenerator
             }
         }
 
-        private void WriteTypeNameAndGenericSignature(IMetadataType type)
+        private void WriteTypeNameAndGenericSignature(IMetadataType type, int declaringTypeNumGenericParameters)
         {
             var genericParameters = type.GenericTypeParameters;
             if (genericParameters.Count == 0)
@@ -73,19 +73,19 @@ namespace ApiContractGenerator
                     type.Name.CopyTo(0, buffer, 0, buffer.Length);
                     writer.Write(buffer);
                 }
-                WriteGenericSignature(type.GenericTypeParameters);
+                WriteGenericSignature(type.GenericTypeParameters, declaringTypeNumGenericParameters);
             }
         }
 
-        private void WriteGenericSignature(IReadOnlyList<GenericParameterTypeReference> genericParameters)
+        private void WriteGenericSignature(IReadOnlyList<GenericParameterTypeReference> genericParameters, int numToSkip)
         {
-            if (genericParameters.Count == 0) return;
+            if (numToSkip >= genericParameters.Count) return;
 
             writer.Write('<');
 
-            for (var i = 0; i < genericParameters.Count; i++)
+            for (var i = numToSkip; i < genericParameters.Count; i++)
             {
-                if (i != 0) writer.Write(", ");
+                if (i != numToSkip) writer.Write(", ");
                 writer.Write(genericParameters[i].Name);
             }
 
@@ -631,7 +631,7 @@ namespace ApiContractGenerator
                 }
             }
 
-            WriteGenericSignature(metadataMethod.GenericTypeParameters);
+            WriteGenericSignature(metadataMethod.GenericTypeParameters, numToSkip: 0);
             writer.Write('(');
             WriteParameters(metadataMethod.Parameters, currentNamespace);
             writer.WriteLine(");");
@@ -688,7 +688,7 @@ namespace ApiContractGenerator
             }
 
             foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))
-                Write(nestedType, currentNamespace);
+                Write(nestedType, currentNamespace, metadataType.GenericTypeParameters.Count);
 
             writer.Unindent();
             writer.WriteLine('}');
@@ -722,29 +722,29 @@ namespace ApiContractGenerator
             }
         }
 
-        public void Write(IMetadataType metadataType, string currentNamespace)
+        public void Write(IMetadataType metadataType, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             switch (metadataType)
             {
                 case IMetadataClass metadataClass:
-                    Write(metadataClass, currentNamespace);
+                    Write(metadataClass, currentNamespace, declaringTypeNumGenericParameters);
                     break;
                 case IMetadataStruct metadataStruct:
-                    Write(metadataStruct, currentNamespace);
+                    Write(metadataStruct, currentNamespace, declaringTypeNumGenericParameters);
                     break;
                 case IMetadataEnum metadataEnum:
-                    Write(metadataEnum, currentNamespace);
+                    Write(metadataEnum, currentNamespace, declaringTypeNumGenericParameters);
                     break;
                 case IMetadataDelegate metadataDelegate:
-                    Write(metadataDelegate, currentNamespace);
+                    Write(metadataDelegate, currentNamespace, declaringTypeNumGenericParameters);
                     break;
                 case IMetadataInterface metadataInterface:
-                    Write(metadataInterface, currentNamespace);
+                    Write(metadataInterface, currentNamespace, declaringTypeNumGenericParameters);
                     break;
             }
         }
 
-        public void Write(IMetadataClass metadataClass, string currentNamespace)
+        public void Write(IMetadataClass metadataClass, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             WriteVisibility(metadataClass.Visibility);
 
@@ -756,49 +756,49 @@ namespace ApiContractGenerator
                 writer.Write("sealed ");
 
             writer.Write("class ");
-            WriteTypeNameAndGenericSignature(metadataClass);
+            WriteTypeNameAndGenericSignature(metadataClass, declaringTypeNumGenericParameters);
             WriteBaseTypeAndInterfaces(metadataClass, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataClass, currentNamespace);
         }
 
-        public void Write(IMetadataStruct metadataStruct, string currentNamespace)
+        public void Write(IMetadataStruct metadataStruct, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             WriteVisibility(metadataStruct.Visibility);
             writer.Write("struct ");
-            WriteTypeNameAndGenericSignature(metadataStruct);
+            WriteTypeNameAndGenericSignature(metadataStruct, declaringTypeNumGenericParameters);
             writer.WriteLine();
             WriteTypeMembers(metadataStruct, currentNamespace);
         }
 
-        public void Write(IMetadataInterface metadataInterface, string currentNamespace)
+        public void Write(IMetadataInterface metadataInterface, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
-            WriteTypeNameAndGenericSignature(metadataInterface);
+            WriteTypeNameAndGenericSignature(metadataInterface, declaringTypeNumGenericParameters);
             WriteBaseTypeAndInterfaces(metadataInterface, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataInterface, currentNamespace);
         }
 
-        public void Write(IMetadataEnum metadataEnum, string currentNamespace)
+        public void Write(IMetadataEnum metadataEnum, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             WriteVisibility(metadataEnum.Visibility);
             writer.Write("enum ");
-            WriteTypeNameAndGenericSignature(metadataEnum);
+            WriteTypeNameAndGenericSignature(metadataEnum, declaringTypeNumGenericParameters);
             writer.Write(" : ");
             Write(metadataEnum.UnderlyingType, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataEnum, currentNamespace);
         }
 
-        public void Write(IMetadataDelegate metadataDelegate, string currentNamespace)
+        public void Write(IMetadataDelegate metadataDelegate, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             WriteVisibility(metadataDelegate.Visibility);
             writer.Write("delegate ");
             Write(metadataDelegate.ReturnType, currentNamespace);
             writer.Write(' ');
-            WriteTypeNameAndGenericSignature(metadataDelegate);
+            WriteTypeNameAndGenericSignature(metadataDelegate, declaringTypeNumGenericParameters);
             writer.Write('(');
             WriteParameters(metadataDelegate.Parameters, currentNamespace);
             writer.WriteLine(");");

@@ -734,12 +734,26 @@ namespace ApiContractGenerator
                 Write(@event, metadataType, currentNamespace);
             }
 
+            var operatorMethods = new List<IMetadataMethod>();
+            foreach (var method in metadataType.Methods)
+            {
+                if (!method.Name.StartsWith("op_", StringComparison.Ordinal)) continue;
+                operatorMethods.Add(method);
+                unusedMethods.Remove(method);
+            }
+
             foreach (var method in unusedMethods
                 .OrderByDescending(_ => _.IsStatic)
                 .ThenByDescending(_ => _.Name == ".ctor")
                 .ThenBy(_ => _.Name))
             {
                 Write(method, metadataType, currentNamespace);
+            }
+
+            operatorMethods.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.Ordinal));
+            foreach (var @operator in operatorMethods)
+            {
+                Write(@operator, metadataType, currentNamespace);
             }
 
             foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))

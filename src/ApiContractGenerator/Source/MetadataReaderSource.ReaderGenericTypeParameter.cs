@@ -24,6 +24,10 @@ namespace ApiContractGenerator.Source
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
 
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
+
             public bool IsCovariant => (definition.Attributes & GenericParameterAttributes.Covariant) != 0;
             public bool IsContravariant => (definition.Attributes & GenericParameterAttributes.Contravariant) != 0;
             public bool HasReferenceTypeConstraint => (definition.Attributes & GenericParameterAttributes.ReferenceTypeConstraint) != 0;

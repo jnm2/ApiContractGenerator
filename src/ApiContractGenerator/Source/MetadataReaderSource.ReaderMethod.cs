@@ -36,6 +36,10 @@ namespace ApiContractGenerator.Source
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
 
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(reader, definition.GetCustomAttributes(), GenericContext));
+
             public MetadataVisibility Visibility
             {
                 get
@@ -67,7 +71,7 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (signature == null)
-                        signature = definition.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
+                        signature = definition.DecodeSignature(TypeReferenceTypeProvider.Instance, GenericContext);
                     return signature.Value;
                 }
             }
@@ -92,7 +96,7 @@ namespace ApiContractGenerator.Source
                             if (parameter.SequenceNumber == 0) continue;
                             if (maxSequenceNumber < parameter.SequenceNumber) maxSequenceNumber = parameter.SequenceNumber;
                             var parameterIndex = parameter.SequenceNumber - 1;
-                            r[parameterIndex] = new ReaderParameter(reader, parameter, signature.ParameterTypes[parameterIndex]);
+                            r[parameterIndex] = new ReaderParameter(reader, parameter, GenericContext, signature.ParameterTypes[parameterIndex]);
                         }
 
                         if (maxSequenceNumber != r.Length)

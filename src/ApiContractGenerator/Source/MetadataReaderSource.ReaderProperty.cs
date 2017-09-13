@@ -25,13 +25,17 @@ namespace ApiContractGenerator.Source
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
 
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
+
             private MethodSignature<MetadataTypeReference>? signature;
             private MethodSignature<MetadataTypeReference> Signature
             {
                 get
                 {
                     if (signature == null)
-                        signature = definition.DecodeSignature(SignatureTypeProvider.Instance, genericContext);
+                        signature = definition.DecodeSignature(TypeReferenceTypeProvider.Instance, genericContext);
                     return signature.Value;
                 }
             }

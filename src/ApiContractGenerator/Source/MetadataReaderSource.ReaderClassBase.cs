@@ -33,6 +33,10 @@ namespace ApiContractGenerator.Source
             private string name;
             public string Name => name ?? (name = Reader.GetString(Definition.Name));
 
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(Reader, Definition.GetCustomAttributes(), GenericContext));
+
             public MetadataVisibility Visibility
             {
                 get

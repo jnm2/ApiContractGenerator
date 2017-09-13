@@ -71,7 +71,7 @@ namespace ApiContractGenerator.Source
                     return GetTypeFromTypeDefinitionHandle(reader, (TypeDefinitionHandle)handle);
                 case HandleKind.TypeSpecification:
                     var baseTypeSpecification = reader.GetTypeSpecification((TypeSpecificationHandle)handle);
-                    return baseTypeSpecification.DecodeSignature(SignatureTypeProvider.Instance, genericContext);
+                    return baseTypeSpecification.DecodeSignature(TypeReferenceTypeProvider.Instance, genericContext);
                 default:
                     throw new NotImplementedException();
             }
@@ -136,6 +136,14 @@ namespace ApiContractGenerator.Source
                 return new NestedTypeReference(GetTypeFromTypeDefinitionHandle(reader, declaringType), reader.GetString(baseTypeDefinition.Name));
 
             return new TopLevelTypeReference(null, reader.GetString(baseTypeDefinition.Namespace), reader.GetString(baseTypeDefinition.Name));
+        }
+
+        private static IReadOnlyList<IMetadataAttribute> GetAttributes(MetadataReader reader, CustomAttributeHandleCollection handles, GenericContext genericContext)
+        {
+            var r = new List<IMetadataAttribute>(handles.Count);
+            foreach (var handle in handles)
+                r.Add(new ReaderAttribute(reader, handle, genericContext));
+            return r;
         }
     }
 }

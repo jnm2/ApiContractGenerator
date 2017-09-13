@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model.TypeReferences;
 
@@ -8,10 +9,10 @@ namespace ApiContractGenerator.Source
 {
     public sealed partial class MetadataReaderSource
     {
-        private sealed class SignatureTypeProvider : ISignatureTypeProvider<MetadataTypeReference, GenericContext>
+        private sealed class TypeReferenceTypeProvider : ICustomAttributeTypeProvider<MetadataTypeReference>, ISignatureTypeProvider<MetadataTypeReference, GenericContext>
         {
-            public static readonly SignatureTypeProvider Instance = new SignatureTypeProvider();
-            private SignatureTypeProvider() { }
+            public static readonly TypeReferenceTypeProvider Instance = new TypeReferenceTypeProvider();
+            private TypeReferenceTypeProvider() { }
 
             public MetadataTypeReference GetPrimitiveType(PrimitiveTypeCode typeCode)
             {
@@ -83,6 +84,51 @@ namespace ApiContractGenerator.Source
             public MetadataTypeReference GetTypeFromSpecification(MetadataReader reader, GenericContext genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
             {
                 throw new NotImplementedException();
+            }
+
+            private static readonly TopLevelTypeReference SystemType = new TopLevelTypeReference(null, "System", "Type");
+            public MetadataTypeReference GetSystemType() => SystemType;
+
+            public bool IsSystemType(MetadataTypeReference type)
+            {
+                return type is TopLevelTypeReference topLevel
+                    && topLevel.Name == "Type"
+                    && topLevel.Namespace == "System";
+            }
+
+            public MetadataTypeReference GetTypeFromSerializedName(string name)
+            {
+                var assemblyNameStartSplit = name.IndexOf(',');
+                var assemblyName = assemblyNameStartSplit != -1 ? new AssemblyName(name.Substring(assemblyNameStartSplit + 1)) : null;
+
+                var typeFullName = assemblyNameStartSplit == -1 ? name : name.Slice(0, assemblyNameStartSplit);
+
+                var nestedNameSplit = typeFullName.IndexOf('+');
+                var topLevelName = nestedNameSplit == -1 ? typeFullName : typeFullName.Slice(0, nestedNameSplit);
+
+                var namespaceEndSplit = topLevelName.LastIndexOf('.');
+
+                var topLevelNamespace = namespaceEndSplit == -1 ? null : topLevelName.Slice(0, namespaceEndSplit).ToString();
+                var topLevelTypeName = topLevelName.Slice(namespaceEndSplit + 1).ToString();
+
+                MetadataTypeReference current = new TopLevelTypeReference(assemblyName, topLevelNamespace, topLevelTypeName);
+
+                if (nestedNameSplit == -1) return current;
+
+                var remainingNestedName = typeFullName.Slice(nestedNameSplit + 1);
+
+                for (;;)
+                {
+                    nestedNameSplit = remainingNestedName.IndexOf('+');
+                    if (nestedNameSplit == -1) return new NestedTypeReference(current, remainingNestedName.ToString());
+                    current = new NestedTypeReference(current, remainingNestedName.Slice(0, nestedNameSplit).ToString());
+                    remainingNestedName = remainingNestedName.Slice(nestedNameSplit + 1);
+                }
+            }
+
+            public PrimitiveTypeCode GetUnderlyingEnumType(MetadataTypeReference type)
+            {
+                return PrimitiveTypeCode.Int32;
             }
         }
     }

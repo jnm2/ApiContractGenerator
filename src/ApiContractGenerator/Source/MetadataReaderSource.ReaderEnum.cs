@@ -23,7 +23,7 @@ namespace ApiContractGenerator.Source
                     }
                     else
                     {
-                        underlyingType = field.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
+                        underlyingType = field.DecodeSignature(TypeReferenceTypeProvider.Instance, GenericContext);
                     }
                 }
             }

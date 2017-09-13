@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
@@ -24,6 +25,10 @@ namespace ApiContractGenerator.Source
 
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
+
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
 
             public MetadataTypeReference HandlerType => GetTypeFromEntityHandle(reader, genericContext, definition.Type);
 

@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator", "ApiContractGenerator\ApiContractGenerator.csproj", "{3FD9F355-D9F2-4286-AD9B-DFD48152E265}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator.Console", "ApiContractGenerator.Console\ApiContractGenerator.Console.csproj", "{DCF80689-92DB-478F-AAF7-338A5FB42311}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiContractGenerator.Tests", "ApiContractGenerator.Tests\ApiContractGenerator.Tests.csproj", "{BFBB489E-8997-4519-81D8-8BA6DEFEB877}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{DCF80689-92DB-478F-AAF7-338A5FB42311}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DCF80689-92DB-478F-AAF7-338A5FB42311}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DCF80689-92DB-478F-AAF7-338A5FB42311}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFBB489E-8997-4519-81D8-8BA6DEFEB877}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFBB489E-8997-4519-81D8-8BA6DEFEB877}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFBB489E-8997-4519-81D8-8BA6DEFEB877}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFBB489E-8997-4519-81D8-8BA6DEFEB877}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -394,7 +395,7 @@ namespace ApiContractGenerator
             switch (metadataConstantValue.TypeCode)
             {
                 case ConstantTypeCode.Boolean:
-                    WriteStringLiteral(metadataConstantValue.GetValueAsBoolean() ? "true" : "false");
+                    writer.Write(metadataConstantValue.GetValueAsBoolean() ? "true" : "false");
                     break;
                 case ConstantTypeCode.Char:
                     WriteCharLiteral(metadataConstantValue.GetValueAsChar());
@@ -959,6 +960,123 @@ namespace ApiContractGenerator
             return null;
         }
 
+        private void WriteAttributeArgumentValue(MetadataTypeReference type, object value, string currentNamespace)
+        {
+            switch (value)
+            {
+                case null:
+                    writer.Write("null");
+                    break;
+
+                case MetadataTypeReference typeRef:
+                    writer.Write("typeof(");
+                    Write(typeRef, currentNamespace);
+                    writer.Write(')');
+                    break;
+
+                default:
+                    switch (type)
+                    {
+                        case PrimitiveTypeReference primitiveType:
+                            switch (primitiveType.Code)
+                            {
+                                case PrimitiveTypeCode.Boolean:
+                                    writer.Write((bool)value ? "true" : "false");
+                                    break;
+                                case PrimitiveTypeCode.Char:
+                                    WriteCharLiteral((char)value);
+                                    break;
+                                case PrimitiveTypeCode.SByte:
+                                    writer.Write((sbyte)value);
+                                    break;
+                                case PrimitiveTypeCode.Byte:
+                                    writer.Write((byte)value);
+                                    break;
+                                case PrimitiveTypeCode.Int16:
+                                    writer.Write((short)value);
+                                    break;
+                                case PrimitiveTypeCode.UInt16:
+                                    writer.Write((ushort)value);
+                                    break;
+                                case PrimitiveTypeCode.Int32:
+                                    writer.Write((int)value);
+                                    break;
+                                case PrimitiveTypeCode.UInt32:
+                                    writer.Write((uint)value);
+                                    break;
+                                case PrimitiveTypeCode.Int64:
+                                    writer.Write((long)value);
+                                    break;
+                                case PrimitiveTypeCode.UInt64:
+                                    writer.Write((ulong)value);
+                                    break;
+                                case PrimitiveTypeCode.Single:
+                                    writer.Write((float)value);
+                                    break;
+                                case PrimitiveTypeCode.Double:
+                                    writer.Write((double)value);
+                                    break;
+                                case PrimitiveTypeCode.String:
+                                    WriteStringLiteral((string)value);
+                                    break;
+                                case PrimitiveTypeCode.IntPtr:
+                                    writer.Write("(System.IntPtr)");
+                                    var valueAsLong = (long)(IntPtr)value;
+                                    if (valueAsLong < 0) writer.Write('(');
+                                    writer.Write(valueAsLong);
+                                    if (valueAsLong < 0) writer.Write(')');
+                                    break;
+                                case PrimitiveTypeCode.UIntPtr:
+                                    writer.Write("(System.UIntPtr)");
+                                    writer.Write((ulong)(UIntPtr)value);
+                                    break;
+                                default:
+                                    throw new NotImplementedException();
+                            }
+                            break;
+
+                        case ArrayTypeReference arrayType:
+                            writer.Write("new ");
+                            if (arrayType.Dimensions != 1) throw new NotImplementedException();
+                            Write(arrayType, currentNamespace);
+                            writer.Write(" { ");
+
+                            var isFirst = true;
+
+                            // TODO: stop MetadataReaderSource implementation details leaking. Need MetadataValue type hierarchy.
+                            foreach (CustomAttributeTypedArgument<MetadataTypeReference> item in (IEnumerable)value)
+                            {
+                                if (isFirst) isFirst = false;
+                                else writer.Write(", ");
+                                WriteAttributeArgumentValue(item.Type, item.Value, currentNamespace);
+                            }
+
+                            writer.Write(" }");
+                            break;
+
+                        case TopLevelTypeReference _:
+                        case NestedTypeReference _:
+                            if (!(value is int || value is uint || value is long || value is ulong || value is byte || value is sbyte || value is short || value is ushort))
+                                throw new NotImplementedException();
+
+                            WriteEnumReferenceValue(type, value, currentNamespace);
+                            break;
+
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    break;
+            }
+        }
+
+        private void WriteEnumReferenceValue(MetadataTypeReference enumType, object value, string currentNamespace)
+        {
+            writer.Write('(');
+            Write(enumType, currentNamespace);
+            writer.Write(')');
+            writer.Write(value);
+        }
+
         private void WriteAttributes(IReadOnlyList<IMetadataAttribute> attributes, string currentNamespace, bool newLines)
         {
             if (attributes.Count == 0) return;
@@ -989,7 +1107,21 @@ namespace ApiContractGenerator
                 {
                     writer.Write('(');
 
+                    var isFirst = true;
 
+                    foreach (var arg in fixedArgs)
+                    {
+                        if (isFirst) isFirst = false; else writer.Write(", ");
+                        WriteAttributeArgumentValue(arg.ValueType, arg.Value, currentNamespace);
+                    }
+
+                    foreach (var arg in namedArgs)
+                    {
+                        if (isFirst) isFirst = false; else writer.Write(", ");
+                        writer.Write(arg.Name);
+                        writer.Write(" = ");
+                        WriteAttributeArgumentValue(arg.ValueType, arg.Value, currentNamespace);
+                    }
 
                     writer.Write(')');
                 }

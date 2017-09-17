@@ -12,10 +12,17 @@ namespace ApiContractGenerator
     public sealed partial class CSharpTextFormatter : IMetadataWriter
     {
         private readonly IndentedTextWriter writer;
+        private readonly bool spaceLines;
 
-        public CSharpTextFormatter(TextWriter writer)
+        public CSharpTextFormatter(TextWriter writer, bool spaceLines = true)
         {
             this.writer = new IndentedTextWriter(writer);
+            this.spaceLines = spaceLines;
+        }
+
+        private void WriteLineSpacing()
+        {
+            if (spaceLines) writer.WriteLine();
         }
 
         public void Write(IMetadataSource metadataSource)
@@ -31,8 +38,12 @@ namespace ApiContractGenerator
             writer.WriteLine('{');
             writer.Indent();
 
+            var isFirst = true;
             foreach (var type in metadataNamespace.Types.OrderBy(_ => _.Name))
+            {
+                if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(type, metadataNamespace.Name, declaringTypeNumGenericParameters: 0);
+            }
 
             writer.Unindent();
             writer.WriteLine('}');
@@ -697,9 +708,15 @@ namespace ApiContractGenerator
             writer.WriteLine('{');
             writer.Indent();
 
+            var isFirst = true;
+
             if (metadataType is IMetadataEnum metadataEnum)
             {
-                WriteEnumFields(metadataEnum);
+                if (metadataEnum.Fields.Count != 0)
+                {
+                    WriteEnumFields(metadataEnum);
+                    isFirst = false;
+                }
             }
             else
             {
@@ -709,6 +726,7 @@ namespace ApiContractGenerator
                     .ThenByDescending(_ => _.IsInitOnly)
                     .ThenBy(_ => _.Name))
                 {
+                    if (isFirst) isFirst = false; else WriteLineSpacing();
                     Write(field, currentNamespace);
                 }
             }
@@ -721,6 +739,8 @@ namespace ApiContractGenerator
             {
                 if (property.GetAccessor != null) unusedMethods.Remove(property.GetAccessor);
                 if (property.SetAccessor != null) unusedMethods.Remove(property.SetAccessor);
+
+                if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(property, metadataType, currentNamespace);
             }
 
@@ -731,6 +751,8 @@ namespace ApiContractGenerator
                 if (@event.AddAccessor != null) unusedMethods.Remove(@event.AddAccessor);
                 if (@event.RemoveAccessor != null) unusedMethods.Remove(@event.RemoveAccessor);
                 if (@event.RaiseAccessor != null) unusedMethods.Remove(@event.RaiseAccessor);
+
+                if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(@event, metadataType, currentNamespace);
             }
 
@@ -747,17 +769,22 @@ namespace ApiContractGenerator
                 .ThenByDescending(_ => _.Name == ".ctor")
                 .ThenBy(_ => _.Name))
             {
+                if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(method, metadataType, currentNamespace);
             }
 
             operatorMethods.Sort((x, y) => string.Compare(x.Name, y.Name, StringComparison.Ordinal));
             foreach (var @operator in operatorMethods)
             {
+                if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(@operator, metadataType, currentNamespace);
             }
 
             foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))
+            {
+                if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(nestedType, currentNamespace, metadataType.GenericTypeParameters.Count);
+            }
 
             writer.Unindent();
             writer.WriteLine('}');

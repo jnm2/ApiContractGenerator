@@ -11,7 +11,11 @@ namespace ApiContractGenerator
         private int indent;
         private const string IndentChars = "    ";
         private char[] indentBuffer = Array.Empty<char>();
-        private bool pendingIndent;
+
+        /// <summary>
+        /// Indicates whether you're at the start of a new line and the indent has yet not been written
+        /// </summary>
+        private bool pendingIndent = true;
 
         public IndentedTextWriter(TextWriter target)
         {
@@ -48,17 +52,81 @@ namespace ApiContractGenerator
             return target.WriteAsync(GetIndentBuffer(), 0, indent * IndentChars.Length);
         }
 
-
+        private int nextNewLineMatchPosition;
 
         public override void Write(char value)
         {
-            if (pendingIndent)
+            var newLine = NewLine;
+            if (!string.IsNullOrEmpty(newLine) && value == newLine[nextNewLineMatchPosition])
             {
-                WriteIndent();
-                pendingIndent = false;
+                nextNewLineMatchPosition++;
+                if (nextNewLineMatchPosition == newLine.Length)
+                {
+                    nextNewLineMatchPosition = 0;
+                    pendingIndent = true;
+                }
             }
+            else
+            {
+                nextNewLineMatchPosition = 0;
+                if (pendingIndent)
+                {
+                    pendingIndent = false;
+                    WriteIndent();
+                }
+            }
+
             target.Write(value);
         }
+
+        public override Task WriteAsync(char value)
+        {
+            var newLine = NewLine;
+            if (!string.IsNullOrEmpty(newLine) && value == newLine[nextNewLineMatchPosition])
+            {
+                nextNewLineMatchPosition++;
+                if (nextNewLineMatchPosition == newLine.Length)
+                {
+                    nextNewLineMatchPosition = 0;
+                    pendingIndent = true;
+                }
+            }
+            else if (pendingIndent)
+            {
+                pendingIndent = false;
+                return IndentThenWriteAsync(value);
+            }
+
+            return target.WriteAsync(value);
+        }
+
+        private async Task IndentThenWriteAsync(char value)
+        {
+            await WriteIndentAsync().ConfigureAwait(false);
+            await WriteAsync(value).ConfigureAwait(false);
+        }
+
+        #region Performance optimization
+
+        public override void WriteLine()
+        {
+            if (nextNewLineMatchPosition != 0)
+            {
+                base.WriteLine();
+                return;
+            }
+            pendingIndent = true;
+            target.WriteLine();
+        }
+
+        public override Task WriteLineAsync()
+        {
+            if (nextNewLineMatchPosition != 0) return base.WriteLineAsync();
+            pendingIndent = true;
+            return target.WriteLineAsync();
+        }
+
+        #endregion
 
         protected override void Dispose(bool disposing)
         {
@@ -74,350 +142,6 @@ namespace ApiContractGenerator
         public override Task FlushAsync()
         {
             return target.FlushAsync();
-        }
-
-        public override void Write(bool value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(char[] buffer)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(buffer);
-        }
-
-        public override void Write(char[] buffer, int index, int count)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(buffer, index, count);
-        }
-
-        public override void Write(decimal value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(double value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(int value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(long value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(object value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(float value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(string value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(string format, object arg0)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(format, arg0);
-        }
-
-        public override void Write(string format, object arg0, object arg1)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(format, arg0, arg1);
-        }
-
-        public override void Write(string format, object arg0, object arg1, object arg2)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(format, arg0, arg1, arg2);
-        }
-
-        public override void Write(string format, params object[] arg)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(format, arg);
-        }
-
-        public override void Write(uint value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override void Write(ulong value)
-        {
-            if (pendingIndent)
-            {
-                WriteIndent();
-                pendingIndent = false;
-            }
-            target.Write(value);
-        }
-
-        public override async Task WriteAsync(char value)
-        {
-            if (pendingIndent)
-            {
-                await WriteIndentAsync().ConfigureAwait(false);
-                pendingIndent = false;
-            }
-            await target.WriteAsync(value).ConfigureAwait(false);
-        }
-
-        public override async Task WriteAsync(char[] buffer, int index, int count)
-        {
-            if (pendingIndent)
-            {
-                await WriteIndentAsync().ConfigureAwait(false);
-                pendingIndent = false;
-            }
-            await target.WriteAsync(buffer, index, count).ConfigureAwait(false);
-        }
-
-        public override async Task WriteAsync(string value)
-        {
-            if (pendingIndent)
-            {
-                await WriteIndentAsync().ConfigureAwait(false);
-                pendingIndent = false;
-            }
-            await target.WriteAsync(value).ConfigureAwait(false);
-        }
-
-        public override void WriteLine()
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine();
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(bool value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(char value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(char[] buffer)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(buffer);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(char[] buffer, int index, int count)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(buffer, index, count);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(decimal value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(double value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(int value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(long value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(object value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(float value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(string value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(string format, object arg0)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(format, arg0);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(string format, object arg0, object arg1)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(format, arg0, arg1);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(string format, object arg0, object arg1, object arg2)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(format, arg0, arg1, arg2);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(string format, params object[] arg)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(format, arg);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(uint value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override void WriteLine(ulong value)
-        {
-            if (pendingIndent) WriteIndent();
-            target.WriteLine(value);
-            pendingIndent = true;
-        }
-
-        public override async Task WriteLineAsync()
-        {
-            if (pendingIndent) await WriteIndentAsync().ConfigureAwait(false);
-            await target.WriteLineAsync().ConfigureAwait(false);
-            pendingIndent = true;
-        }
-
-        public override async Task WriteLineAsync(char value)
-        {
-            if (pendingIndent) await WriteIndentAsync().ConfigureAwait(false);
-            await target.WriteLineAsync(value).ConfigureAwait(false);
-            pendingIndent = true;
-        }
-
-        public override async Task WriteLineAsync(char[] buffer, int index, int count)
-        {
-            if (pendingIndent) await WriteIndentAsync().ConfigureAwait(false);
-            await target.WriteLineAsync(buffer, index, count).ConfigureAwait(false);
-            pendingIndent = true;
-        }
-
-        public override async Task WriteLineAsync(string value)
-        {
-            if (pendingIndent) await WriteIndentAsync().ConfigureAwait(false);
-            await target.WriteLineAsync(value).ConfigureAwait(false);
-            pendingIndent = true;
         }
 
         public override Encoding Encoding => target.Encoding;

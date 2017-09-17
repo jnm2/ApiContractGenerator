@@ -926,6 +926,39 @@ namespace ApiContractGenerator
             writer.WriteLine(");");
         }
 
+        private static bool TryShortenAttributeName(string fullAttributeName, out string shortenedAttributeName)
+        {
+            if (fullAttributeName.EndsWith("Attribute"))
+            {
+                shortenedAttributeName = fullAttributeName.Substring(0, fullAttributeName.Length - 9);
+                return true;
+            }
+
+            shortenedAttributeName = null;
+            return false;
+        }
+
+        private static MetadataTypeReference GetShortenedAttributeName(MetadataTypeReference fullAttributeName)
+        {
+            switch (fullAttributeName)
+            {
+                case TopLevelTypeReference topLevel:
+                {
+                    if (TryShortenAttributeName(topLevel.Name, out var shortened))
+                        return new TopLevelTypeReference(topLevel.Assembly, topLevel.Namespace, shortened);
+                    break;
+                }
+                case NestedTypeReference nested:
+                {
+                    if (TryShortenAttributeName(nested.Name, out var shortened))
+                        return new NestedTypeReference(nested.DeclaringType, shortened);
+                    break;
+                }
+            }
+
+            return null;
+        }
+
         private void WriteAttributes(IReadOnlyList<IMetadataAttribute> attributes, string currentNamespace, bool newLines)
         {
             if (attributes.Count == 0) return;
@@ -948,7 +981,7 @@ namespace ApiContractGenerator
                 }
 
                 var attribute = attributes[i];
-                Write(attribute.AttributeType, currentNamespace);
+                Write(GetShortenedAttributeName(attribute.AttributeType), currentNamespace);
 
                 var namedArgs = attribute.NamedArguments;
                 var fixedArgs = attribute.FixedArguments;

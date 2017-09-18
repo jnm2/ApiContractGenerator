@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ApiContractGenerator.Model.AttributeValues;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Model
@@ -6,7 +7,7 @@ namespace ApiContractGenerator.Model
     public interface IMetadataAttribute
     {
         MetadataTypeReference AttributeType { get; }
-        IReadOnlyList<IMetadataAttributeArgument> FixedArguments { get; }
-        IReadOnlyList<IMetadataAttributeNamedArgument> NamedArguments { get; }
+        IReadOnlyList<MetadataAttributeValue> FixedArguments { get; }
+        IReadOnlyList<MetadataAttributeNamedArgument> NamedArguments { get; }
     }
 }

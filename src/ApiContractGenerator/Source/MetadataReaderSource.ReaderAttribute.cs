@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
+using ApiContractGenerator.Model.AttributeValues;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
@@ -58,8 +60,8 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            private IReadOnlyList<IMetadataAttributeArgument> fixedArguments;
-            public IReadOnlyList<IMetadataAttributeArgument> FixedArguments
+            private IReadOnlyList<MetadataAttributeValue> fixedArguments;
+            public IReadOnlyList<MetadataAttributeValue> FixedArguments
             {
                 get
                 {
@@ -69,8 +71,8 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            private IReadOnlyList<IMetadataAttributeNamedArgument> namedArguments;
-            public IReadOnlyList<IMetadataAttributeNamedArgument> NamedArguments
+            private IReadOnlyList<MetadataAttributeNamedArgument> namedArguments;
+            public IReadOnlyList<MetadataAttributeNamedArgument> NamedArguments
             {
                 get
                 {
@@ -86,55 +88,65 @@ namespace ApiContractGenerator.Source
 
                 if (value.FixedArguments.IsEmpty)
                 {
-                    fixedArguments = Array.Empty<IMetadataAttributeArgument>();
+                    fixedArguments = Array.Empty<MetadataAttributeValue>();
                 }
                 else
                 {
-                    var r = new IMetadataAttributeArgument[value.FixedArguments.Length];
+                    var r = new MetadataAttributeValue[value.FixedArguments.Length];
                     for (var i = 0; i < r.Length; i++)
                     {
                         var arg = value.FixedArguments[i];
-                        r[i] = new Argument(arg.Value, arg.Type);
+                        r[i] = DecodeValue(arg.Type, arg.Value);
                     }
                     fixedArguments = r;
                 }
 
                 if (value.NamedArguments.IsEmpty)
                 {
-                    namedArguments = Array.Empty<IMetadataAttributeNamedArgument>();
+                    namedArguments = Array.Empty<MetadataAttributeNamedArgument>();
                 }
                 else
                 {
-                    var r = new IMetadataAttributeNamedArgument[value.FixedArguments.Length];
+                    var r = new MetadataAttributeNamedArgument[value.NamedArguments.Length];
                     for (var i = 0; i < r.Length; i++)
                     {
                         var arg = value.NamedArguments[i];
-                        r[i] = new NamedArgument(arg.Value, arg.Type, arg.Name);
+                        r[i] = new MetadataAttributeNamedArgument(arg.Name, DecodeValue(arg.Type, arg.Value));
                     }
                     namedArguments = r;
                 }
             }
 
-            private class Argument : IMetadataAttributeArgument
+            private MetadataAttributeValue DecodeValue(MetadataTypeReference type, object value)
             {
-                public Argument(object value, MetadataTypeReference valueType)
+                if (value == null)
                 {
-                    Value = value;
-                    ValueType = valueType;
+                    return ConstantAttributeValue.Null;
+                }
+                if (type is PrimitiveTypeReference)
+                {
+                    return new ConstantAttributeValue(MetadataConstantValue.FromObject(value));
+                }
+                if (value is MetadataTypeReference typeValue)
+                {
+                    return new TypeAttributeValue(typeValue);
+                }
+                if (type is ArrayTypeReference arrayType)
+                {
+                    var items = (ImmutableArray<CustomAttributeTypedArgument<MetadataTypeReference>>)value;
+                    var values = new MetadataAttributeValue[items.Length];
+
+                    for (var i = 0; i < values.Length; i++)
+                    {
+                        var item = items[i];
+                        values[i] = DecodeValue(item.Type, item.Value);
+                    }
+
+                    return new ArrayAttributeValue(arrayType, values);
                 }
 
-                public object Value { get; }
-                public MetadataTypeReference ValueType { get; }
-            }
-
-            private sealed class NamedArgument : Argument, IMetadataAttributeNamedArgument
-            {
-                public NamedArgument(object value, MetadataTypeReference valueType, string name) : base(value, valueType)
-                {
-                    Name = name;
-                }
-
-                public string Name { get; }
+                // The only other thing DecodeValue can give us is an enum
+                return new EnumAttributeValue(type, MetadataConstantValue.FromObject(value));
             }
         }
     }

@@ -971,18 +971,26 @@ namespace ApiContractGenerator
                 case ArrayAttributeValue array:
                     writer.Write("new ");
 
-                    Write(array.ArrayType, currentNamespace);
-                    writer.Write(" { ");
-
-                    var isFirst = true;
-
-                    foreach (var element in array.Elements)
+                    if (array.Elements.Count == 0)
                     {
-                        if (isFirst) isFirst = false; else writer.Write(", ");
-                        WriteAttributeArgumentValue(element, currentNamespace);
+                        Write(array.ArrayType.ElementType, currentNamespace);
+                        writer.Write("[0]");
                     }
+                    else
+                    {
+                        Write(array.ArrayType, currentNamespace);
+                        writer.Write(" { ");
 
-                    writer.Write(" }");
+                        var isFirst = true;
+
+                        foreach (var element in array.Elements)
+                        {
+                            if (isFirst) isFirst = false; else writer.Write(", ");
+                            WriteAttributeArgumentValue(element, currentNamespace);
+                        }
+
+                        writer.Write(" }");
+                    }
                     break;
 
                 case TypeAttributeValue type:

@@ -6,6 +6,8 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
 {
     public sealed class GacAssemblyReferenceResolver : IAssemblyReferenceResolver
     {
+        private IAssemblyCache globalAssemblyCache;
+
         public bool TryGetAssemblyPath(AssemblyName assemblyName, out string path)
         {
             if (assemblyName?.Version == null || assemblyName.GetPublicKeyToken() == null)
@@ -14,14 +16,41 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
                 return false;
             }
 
-            CreateAssemblyCache(out var assemblyCache, 0);
+            if (TryLocate(assemblyName.FullName, out path))
+                return true;
+
+            // Ran into this
+            if (assemblyName.CultureName == string.Empty)
+            {
+                var withoutCultureNeutral = new AssemblyName(assemblyName.FullName)
+                {
+                    CultureName = null
+                };
+
+                return TryLocate(withoutCultureNeutral.FullName, out path);
+            }
+
+            return false;
+        }
+
+        private bool TryLocate(string name, out string path)
+        {
+            if (globalAssemblyCache == null)
+                CreateAssemblyCache(out globalAssemblyCache, 0);
 
             var assemblyInfo = new ASSEMBLY_INFO(1024);
-            assemblyCache.QueryAssemblyInfo(QUERYASMINFO_FLAG.VALIDATE, assemblyName.FullName, ref assemblyInfo);
+            var result = globalAssemblyCache.QueryAssemblyInfo(QUERYASMINFO_FLAG.VALIDATE, name, ref assemblyInfo);
+            if (result.IsError)
+            {
+                if (result.Code != WinErrorCode.FileNotFound) throw result.CreateException();
+                path = null;
+                return false;
+            }
 
             path = assemblyInfo.pszCurrentAssemblyPathBuf.Substring(0, assemblyInfo.cchBuf - 1);
             return true;
         }
+
 
         [DllImport("fusion.dll", PreserveSig = false)]
         private static extern void CreateAssemblyCache(out IAssemblyCache ppAsmCache, uint dwReserved);
@@ -30,7 +59,8 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
         private interface IAssemblyCache
         {
             void UninstallAssembly(uint dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName, IntPtr pRefData, out uint pulDisposition);
-            void QueryAssemblyInfo(QUERYASMINFO_FLAG dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName, ref ASSEMBLY_INFO pAsmInfo);
+            [PreserveSig]
+            HResult QueryAssemblyInfo(QUERYASMINFO_FLAG dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName, ref ASSEMBLY_INFO pAsmInfo);
             void CreateAssemblyCacheItem(uint dwFlags, IntPtr pvReserved, out IntPtr ppAsmItem, [MarshalAs(UnmanagedType.LPWStr)] string pszAssemblyName);
             object CreateAssemblyScavenger();
             void InstallAssembly(uint dwFlags, [MarshalAs(UnmanagedType.LPWStr)] string pszManifestFilePath, IntPtr pRefData);

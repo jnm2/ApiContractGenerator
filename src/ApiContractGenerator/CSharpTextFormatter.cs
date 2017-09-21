@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
+using ApiContractGenerator.EnumReferenceResolvers;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.AttributeValues;
 using ApiContractGenerator.Model.TypeReferences;
@@ -13,11 +14,13 @@ namespace ApiContractGenerator
     public sealed partial class CSharpTextFormatter : IMetadataWriter
     {
         private readonly IndentedTextWriter writer;
+        private readonly IEnumReferenceResolver enumReferenceResolver;
         private readonly bool spaceLines;
 
-        public CSharpTextFormatter(TextWriter writer, bool spaceLines = true)
+        public CSharpTextFormatter(TextWriter writer, IEnumReferenceResolver enumReferenceResolver, bool spaceLines = true)
         {
             this.writer = new IndentedTextWriter(writer);
+            this.enumReferenceResolver = enumReferenceResolver;
             this.spaceLines = spaceLines;
         }
 
@@ -1000,14 +1003,95 @@ namespace ApiContractGenerator
                     break;
 
                 case EnumAttributeValue @enum:
-                    writer.Write('(');
-                    Write(@enum.EnumType, currentNamespace);
-                    writer.Write(')');
-                    Write(@enum.UnderlyingValue);
+                    WriteEnumReferenceValue(@enum.EnumType, @enum.UnderlyingValue, currentNamespace);
                     break;
 
                 default:
                     throw new NotImplementedException();
+            }
+        }
+
+        private static bool Equals(IMetadataConstantValue x, IMetadataConstantValue y)
+        {
+            if (x == null) throw new ArgumentNullException(nameof(x));
+            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x.TypeCode != y.TypeCode) return false;
+
+            switch (x.TypeCode)
+            {
+                case ConstantTypeCode.NullReference:
+                    return true;
+                case ConstantTypeCode.Boolean:
+                    return x.GetValueAsBoolean() == y.GetValueAsBoolean();
+                case ConstantTypeCode.Char:
+                    return x.GetValueAsChar() == y.GetValueAsChar();
+                case ConstantTypeCode.SByte:
+                    return x.GetValueAsSByte() == y.GetValueAsSByte();
+                case ConstantTypeCode.Byte:
+                    return x.GetValueAsByte() == y.GetValueAsByte();
+                case ConstantTypeCode.Int16:
+                    return x.GetValueAsInt16() == y.GetValueAsInt16();
+                case ConstantTypeCode.UInt16:
+                    return x.GetValueAsUInt16() == y.GetValueAsUInt16();
+                case ConstantTypeCode.Int32:
+                    return x.GetValueAsInt32() == y.GetValueAsInt32();
+                case ConstantTypeCode.UInt32:
+                    return x.GetValueAsUInt32() == y.GetValueAsUInt32();
+                case ConstantTypeCode.Int64:
+                    return x.GetValueAsInt64() == y.GetValueAsInt64();
+                case ConstantTypeCode.UInt64:
+                    return x.GetValueAsUInt64() == y.GetValueAsUInt64();
+                case ConstantTypeCode.Single:
+                    return x.GetValueAsSingle() == y.GetValueAsSingle();
+                case ConstantTypeCode.Double:
+                    return x.GetValueAsDouble() == y.GetValueAsDouble();
+                case ConstantTypeCode.String:
+                    return x.GetValueAsString() == y.GetValueAsString();
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private void WriteEnumReferenceValue(MetadataTypeReference enumType, IMetadataConstantValue underlyingValue, string currentNamespace)
+        {
+            if (enumReferenceResolver.TryGetEnumInfo(enumType, out var info))
+            {
+                foreach (var field in info.Fields)
+                {
+                    if (Equals(field.Value, underlyingValue))
+                    {
+                        Write(enumType, currentNamespace);
+                        writer.Write('.');
+                        writer.Write(field.Name);
+                        return;
+                    }
+                }
+            }
+
+            writer.Write('(');
+            Write(enumType, currentNamespace);
+            writer.Write(')');
+
+            var isNegative = IsNegativeInteger(underlyingValue);
+            if (isNegative) writer.Write('(');
+            Write(underlyingValue);
+            if (isNegative) writer.Write(')');
+        }
+
+        private static bool IsNegativeInteger(IMetadataConstantValue value)
+        {
+            switch (value.TypeCode)
+            {
+                case ConstantTypeCode.SByte:
+                    return value.GetValueAsSByte() < 0;
+                case ConstantTypeCode.Int16:
+                    return value.GetValueAsInt16() < 0;
+                case ConstantTypeCode.Int32:
+                    return value.GetValueAsInt32() < 0;
+                case ConstantTypeCode.Int64:
+                    return value.GetValueAsInt64() < 0;
+                default:
+                    return false;
             }
         }
 

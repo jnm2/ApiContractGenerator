@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Reflection.Metadata;
 
 namespace ApiContractGenerator.Model
@@ -12,6 +13,7 @@ namespace ApiContractGenerator.Model
             return value == null ? Null : new ObjectAsConstantValue(value);
         }
 
+        [DebuggerDisplay("{ToString(),nq}")]
         private sealed class ObjectAsConstantValue : IMetadataConstantValue
         {
             private readonly object value;
@@ -86,6 +88,8 @@ namespace ApiContractGenerator.Model
             public double GetValueAsDouble() => (double)value;
 
             public string GetValueAsString() => (string)value;
+
+            public override string ToString() => value == null ? "null" : value.ToString();
         }
     }
 }

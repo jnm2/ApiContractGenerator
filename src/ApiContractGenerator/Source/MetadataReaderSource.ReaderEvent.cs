@@ -10,12 +10,14 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderEvent : IMetadataEvent
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly EventDefinition definition;
             private readonly GenericContext genericContext;
 
-            public ReaderEvent(MetadataReader reader, EventDefinition definition, GenericContext genericContext, IMetadataMethod addAccessor, IMetadataMethod removeAccessor, IMetadataMethod raiseAccessor)
+            public ReaderEvent(MetadataReader reader, TypeReferenceTypeProvider typeProvider, EventDefinition definition, GenericContext genericContext, IMetadataMethod addAccessor, IMetadataMethod removeAccessor, IMetadataMethod raiseAccessor)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
                 this.genericContext = genericContext;
                 AddAccessor = addAccessor;
@@ -28,9 +30,9 @@ namespace ApiContractGenerator.Source
 
             private IReadOnlyList<IMetadataAttribute> attributes;
             public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
-                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), genericContext));
 
-            public MetadataTypeReference HandlerType => GetTypeFromEntityHandle(reader, genericContext, definition.Type);
+            public MetadataTypeReference HandlerType => GetTypeFromEntityHandle(reader, typeProvider, genericContext, definition.Type);
 
             public IMetadataMethod AddAccessor { get; }
             public IMetadataMethod RemoveAccessor { get; }

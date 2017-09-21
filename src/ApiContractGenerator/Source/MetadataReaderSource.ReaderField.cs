@@ -11,12 +11,14 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderField : IMetadataField
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly FieldDefinition definition;
             private readonly GenericContext genericContext;
 
-            public ReaderField(MetadataReader reader, FieldDefinition definition, GenericContext genericContext)
+            public ReaderField(MetadataReader reader, TypeReferenceTypeProvider typeProvider, FieldDefinition definition, GenericContext genericContext)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
                 this.genericContext = genericContext;
             }
@@ -26,7 +28,7 @@ namespace ApiContractGenerator.Source
 
             private IReadOnlyList<IMetadataAttribute> attributes;
             public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
-                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), genericContext));
 
             public MetadataVisibility Visibility
             {
@@ -51,7 +53,7 @@ namespace ApiContractGenerator.Source
 
             private MetadataTypeReference fieldType;
             public MetadataTypeReference FieldType =>
-                fieldType ?? (fieldType = definition.DecodeSignature(TypeReferenceTypeProvider.Instance, genericContext));
+                fieldType ?? (fieldType = definition.DecodeSignature(typeProvider, genericContext));
 
 
             private ReaderConstantValue defaultValue;

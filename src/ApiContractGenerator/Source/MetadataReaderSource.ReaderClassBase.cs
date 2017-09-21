@@ -11,11 +11,13 @@ namespace ApiContractGenerator.Source
         private abstract class ReaderClassBase : IMetadataType
         {
             protected readonly MetadataReader Reader;
+            protected readonly TypeReferenceTypeProvider TypeProvider;
             protected readonly TypeDefinition Definition;
 
-            protected ReaderClassBase(MetadataReader reader, TypeDefinition definition)
+            protected ReaderClassBase(MetadataReader reader, TypeReferenceTypeProvider typeProvider, TypeDefinition definition)
             {
                 Reader = reader;
+                TypeProvider = typeProvider;
                 Definition = definition;
             }
 
@@ -25,7 +27,7 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (genericContext == null)
-                        genericContext = GenericContext.FromType(Reader, Definition);
+                        genericContext = GenericContext.FromType(Reader, TypeProvider, Definition);
                     return genericContext.Value;
                 }
             }
@@ -35,7 +37,7 @@ namespace ApiContractGenerator.Source
 
             private IReadOnlyList<IMetadataAttribute> attributes;
             public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
-                GetAttributes(Reader, Definition.GetCustomAttributes(), GenericContext));
+                GetAttributes(Reader, TypeProvider, Definition.GetCustomAttributes(), GenericContext));
 
             public MetadataVisibility Visibility
             {
@@ -68,7 +70,7 @@ namespace ApiContractGenerator.Source
                     if (!isBaseTypeValid)
                     {
                         if (!Definition.BaseType.IsNil)
-                            baseType = GetTypeFromEntityHandle(Reader, GenericContext, Definition.BaseType);
+                            baseType = GetTypeFromEntityHandle(Reader, TypeProvider, GenericContext, Definition.BaseType);
                         isBaseTypeValid = true;
                     }
                     return baseType;
@@ -87,7 +89,7 @@ namespace ApiContractGenerator.Source
 
                         foreach (var handle in handles)
                         {
-                            r.Add(GetTypeFromEntityHandle(Reader, GenericContext, Reader.GetInterfaceImplementation(handle).Interface));
+                            r.Add(GetTypeFromEntityHandle(Reader, TypeProvider, GenericContext, Reader.GetInterfaceImplementation(handle).Interface));
                         }
 
                         interfaceImplementations = r;
@@ -113,7 +115,7 @@ namespace ApiContractGenerator.Source
                                 case FieldAttributes.Public:
                                 case FieldAttributes.Family:
                                 case FieldAttributes.FamORAssem:
-                                    r.Add(new ReaderField(Reader, definition, GenericContext));
+                                    r.Add(new ReaderField(Reader, TypeProvider, definition, GenericContext));
                                     break;
                             }
                         }
@@ -141,7 +143,7 @@ namespace ApiContractGenerator.Source
                             var visibleSetter = accessors.Setter.IsNil ? null : GetVisibleMethod(accessors.Setter);
                             if (visibleGetter == null && visibleSetter == null) continue;
 
-                            r.Add(new ReaderProperty(Reader, definition, GenericContext, visibleGetter, visibleSetter));
+                            r.Add(new ReaderProperty(Reader,TypeProvider,  definition, GenericContext, visibleGetter, visibleSetter));
                         }
 
                         properties = r;
@@ -168,7 +170,7 @@ namespace ApiContractGenerator.Source
                             var visibleRaiser = accessors.Raiser.IsNil ? null : GetVisibleMethod(accessors.Raiser);
                             if (visibleAdder == null && visibleRemover == null && visibleRaiser == null) continue;
 
-                            r.Add(new ReaderEvent(Reader, definition, GenericContext, visibleAdder, visibleRemover, visibleRaiser));
+                            r.Add(new ReaderEvent(Reader, TypeProvider, definition, GenericContext, visibleAdder, visibleRemover, visibleRaiser));
                         }
 
                         events = r;
@@ -203,7 +205,7 @@ namespace ApiContractGenerator.Source
                                 case MethodAttributes.Public:
                                 case MethodAttributes.Family:
                                 case MethodAttributes.FamORAssem:
-                                    r.Add(new ReaderMethod(Reader, definition, GenericContext));
+                                    r.Add(new ReaderMethod(Reader, TypeProvider, definition, GenericContext));
                                     visibleMethodHandles.Add(handle);
                                     break;
                             }
@@ -232,7 +234,7 @@ namespace ApiContractGenerator.Source
                                 case TypeAttributes.NestedPublic:
                                 case TypeAttributes.NestedFamily:
                                 case TypeAttributes.NestedFamORAssem:
-                                     r.Add(Create(Reader, definition));
+                                     r.Add(Create(Reader, TypeProvider, definition));
                                     break;
                             }
                         }
@@ -264,11 +266,11 @@ namespace ApiContractGenerator.Source
                 }
             }
 
-            public static ReaderClassBase Create(MetadataReader reader, TypeDefinition typeDefinition)
+            public static ReaderClassBase Create(MetadataReader reader, TypeReferenceTypeProvider typeProvider, TypeDefinition typeDefinition)
             {
                 if ((typeDefinition.Attributes & TypeAttributes.ClassSemanticsMask) == TypeAttributes.Interface)
                 {
-                    return new ReaderInterface(reader, typeDefinition);
+                    return new ReaderInterface(reader, typeProvider, typeDefinition);
                 }
 
                 if (!typeDefinition.BaseType.IsNil
@@ -276,19 +278,19 @@ namespace ApiContractGenerator.Source
                 {
                     if (baseTypeName == "Enum" && baseTypeNamespace == "System")
                     {
-                        return new ReaderEnum(reader, typeDefinition);
+                        return new ReaderEnum(reader, typeProvider, typeDefinition);
                     }
                     if (baseTypeName == "ValueType" && baseTypeNamespace == "System")
                     {
-                        return new ReaderStruct(reader, typeDefinition);
+                        return new ReaderStruct(reader, typeProvider, typeDefinition);
                     }
                     if (baseTypeName == "MulticastDelegate" && baseTypeNamespace == "System")
                     {
-                        return new ReaderDelegate(reader, typeDefinition);
+                        return new ReaderDelegate(reader, typeProvider, typeDefinition);
                     }
                 }
 
-                return new ReaderClass(reader, typeDefinition);
+                return new ReaderClass(reader, typeProvider, typeDefinition);
             }
         }
     }

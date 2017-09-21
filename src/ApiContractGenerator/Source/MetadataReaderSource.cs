@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using ApiContractGenerator.EnumReferenceResolvers;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
 
@@ -13,11 +14,13 @@ namespace ApiContractGenerator.Source
     {
         private readonly PEReader peReader;
         private readonly MetadataReader reader;
+        private readonly TypeReferenceTypeProvider typeProvider;
 
-        public MetadataReaderSource(Stream stream)
+        public MetadataReaderSource(Stream stream, IEnumReferenceResolver enumReferenceResolver)
         {
             peReader = new PEReader(stream);
             reader = peReader.GetMetadataReader();
+            typeProvider = new TypeReferenceTypeProvider(enumReferenceResolver);
         }
 
         public void Dispose()
@@ -43,7 +46,7 @@ namespace ApiContractGenerator.Source
                         {
                             var typeDefinition = reader.GetTypeDefinition(handle);
                             if ((typeDefinition.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.Public)
-                                externallyVisibleTypes.Add(ReaderClassBase.Create(reader, typeDefinition));
+                                externallyVisibleTypes.Add(ReaderClassBase.Create(reader, typeProvider, typeDefinition));
                         }
 
                         var metadataNamespace = new ReaderNamespace(reader, parent, definition, externallyVisibleTypes);
@@ -61,7 +64,7 @@ namespace ApiContractGenerator.Source
         }
 
 
-        private static MetadataTypeReference GetTypeFromEntityHandle(MetadataReader reader, GenericContext genericContext, EntityHandle handle)
+        private static MetadataTypeReference GetTypeFromEntityHandle(MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericContext genericContext, EntityHandle handle)
         {
             switch (handle.Kind)
             {
@@ -71,7 +74,7 @@ namespace ApiContractGenerator.Source
                     return GetTypeFromTypeDefinitionHandle(reader, (TypeDefinitionHandle)handle);
                 case HandleKind.TypeSpecification:
                     var baseTypeSpecification = reader.GetTypeSpecification((TypeSpecificationHandle)handle);
-                    return baseTypeSpecification.DecodeSignature(TypeReferenceTypeProvider.Instance, genericContext);
+                    return baseTypeSpecification.DecodeSignature(typeProvider, genericContext);
                 default:
                     throw new NotImplementedException();
             }
@@ -115,11 +118,11 @@ namespace ApiContractGenerator.Source
             return new TopLevelTypeReference(null, reader.GetString(baseTypeDefinition.Namespace), reader.GetString(baseTypeDefinition.Name));
         }
 
-        private static IReadOnlyList<IMetadataAttribute> GetAttributes(MetadataReader reader, CustomAttributeHandleCollection handles, GenericContext genericContext)
+        private static IReadOnlyList<IMetadataAttribute> GetAttributes(MetadataReader reader, TypeReferenceTypeProvider typeProvider, CustomAttributeHandleCollection handles, GenericContext genericContext)
         {
             var r = new List<IMetadataAttribute>(handles.Count);
             foreach (var handle in handles)
-                r.Add(new ReaderAttribute(reader, handle, genericContext));
+                r.Add(new ReaderAttribute(reader, typeProvider, handle, genericContext));
             return r;
         }
     }

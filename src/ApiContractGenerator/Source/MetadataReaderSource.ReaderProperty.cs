@@ -10,12 +10,14 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderProperty : IMetadataProperty
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly PropertyDefinition definition;
             private readonly GenericContext genericContext;
 
-            public ReaderProperty(MetadataReader reader, PropertyDefinition definition, GenericContext genericContext, IMetadataMethod getAccessor, IMetadataMethod setAccessor)
+            public ReaderProperty(MetadataReader reader, TypeReferenceTypeProvider typeProvider, PropertyDefinition definition, GenericContext genericContext, IMetadataMethod getAccessor, IMetadataMethod setAccessor)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
                 this.genericContext = genericContext;
                 GetAccessor = getAccessor;
@@ -27,7 +29,7 @@ namespace ApiContractGenerator.Source
 
             private IReadOnlyList<IMetadataAttribute> attributes;
             public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
-                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), genericContext));
 
             private MethodSignature<MetadataTypeReference>? signature;
             private MethodSignature<MetadataTypeReference> Signature
@@ -35,7 +37,7 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (signature == null)
-                        signature = definition.DecodeSignature(TypeReferenceTypeProvider.Instance, genericContext);
+                        signature = definition.DecodeSignature(typeProvider, genericContext);
                     return signature.Value;
                 }
             }

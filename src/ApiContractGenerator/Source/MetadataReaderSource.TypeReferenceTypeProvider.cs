@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using ApiContractGenerator.EnumReferenceResolvers;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.Source
@@ -11,8 +12,12 @@ namespace ApiContractGenerator.Source
     {
         private sealed class TypeReferenceTypeProvider : ICustomAttributeTypeProvider<MetadataTypeReference>, ISignatureTypeProvider<MetadataTypeReference, GenericContext>
         {
-            public static readonly TypeReferenceTypeProvider Instance = new TypeReferenceTypeProvider();
-            private TypeReferenceTypeProvider() { }
+            private readonly IEnumReferenceResolver enumReferenceResolver;
+
+            public TypeReferenceTypeProvider(IEnumReferenceResolver enumReferenceResolver)
+            {
+                this.enumReferenceResolver = enumReferenceResolver;
+            }
 
             public MetadataTypeReference GetPrimitiveType(PrimitiveTypeCode typeCode)
             {
@@ -128,7 +133,9 @@ namespace ApiContractGenerator.Source
 
             public PrimitiveTypeCode GetUnderlyingEnumType(MetadataTypeReference type)
             {
-                return PrimitiveTypeCode.Int32;
+                return enumReferenceResolver.TryGetEnumInfo(type, out var info)
+                    ? info.UnderlyingType
+                    : PrimitiveTypeCode.Int32;
             }
         }
     }

@@ -11,12 +11,14 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderParameter : IMetadataParameter
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly Parameter definition;
             private readonly GenericContext genericContext;
 
-            public ReaderParameter(MetadataReader reader, Parameter definition, GenericContext genericContext, MetadataTypeReference parameterType)
+            public ReaderParameter(MetadataReader reader, TypeReferenceTypeProvider typeProvider, Parameter definition, GenericContext genericContext, MetadataTypeReference parameterType)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
                 this.genericContext = genericContext;
                 ParameterType = parameterType;
@@ -27,7 +29,7 @@ namespace ApiContractGenerator.Source
 
             private IReadOnlyList<IMetadataAttribute> attributes;
             public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
-                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), genericContext));
 
             public bool IsIn => (definition.Attributes & ParameterAttributes.In) != 0;
             public bool IsOut => (definition.Attributes & ParameterAttributes.Out) != 0;

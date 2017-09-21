@@ -13,12 +13,14 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderAttribute : IMetadataAttribute
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly CustomAttributeHandle handle;
             private readonly GenericContext genericContext;
 
-            public ReaderAttribute(MetadataReader reader, CustomAttributeHandle handle, GenericContext genericContext)
+            public ReaderAttribute(MetadataReader reader, TypeReferenceTypeProvider typeProvider, CustomAttributeHandle handle, GenericContext genericContext)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.handle = handle;
                 this.genericContext = genericContext;
             }
@@ -46,7 +48,7 @@ namespace ApiContractGenerator.Source
                         {
                             case HandleKind.MemberReference:
                                 var memberReference = reader.GetMemberReference((MemberReferenceHandle)constructorHandle);
-                                attributeType = GetTypeFromEntityHandle(reader, genericContext, memberReference.Parent);
+                                attributeType = GetTypeFromEntityHandle(reader, typeProvider, genericContext, memberReference.Parent);
                                 break;
                             case HandleKind.MethodDefinition:
                                 var constructorDefinition = reader.GetMethodDefinition((MethodDefinitionHandle)constructorHandle);
@@ -84,7 +86,7 @@ namespace ApiContractGenerator.Source
 
             private void DecodeValue()
             {
-                var value = Definition.DecodeValue(TypeReferenceTypeProvider.Instance);
+                var value = Definition.DecodeValue(typeProvider);
 
                 if (value.FixedArguments.IsEmpty)
                 {

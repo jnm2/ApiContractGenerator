@@ -11,12 +11,14 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderGenericTypeParameter : IMetadataGenericTypeParameter
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly GenericParameter definition;
             private readonly GenericContext genericContext;
 
-            public ReaderGenericTypeParameter(MetadataReader reader, GenericParameter definition, GenericContext genericContext)
+            public ReaderGenericTypeParameter(MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericParameter definition, GenericContext genericContext)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
                 this.genericContext = genericContext;
             }
@@ -26,7 +28,7 @@ namespace ApiContractGenerator.Source
 
             private IReadOnlyList<IMetadataAttribute> attributes;
             public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
-                GetAttributes(reader, definition.GetCustomAttributes(), genericContext));
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), genericContext));
 
             public bool IsCovariant => (definition.Attributes & GenericParameterAttributes.Covariant) != 0;
             public bool IsContravariant => (definition.Attributes & GenericParameterAttributes.Contravariant) != 0;
@@ -46,7 +48,7 @@ namespace ApiContractGenerator.Source
 
                         for (var i = 0; i < typeConstraints.Length; i++)
                         {
-                            typeConstraints[i] = GetTypeFromEntityHandle(reader, genericContext, reader.GetGenericParameterConstraint(handles[i]).Type);
+                            typeConstraints[i] = GetTypeFromEntityHandle(reader, typeProvider, genericContext, reader.GetGenericParameterConstraint(handles[i]).Type);
                         }
                     }
                     return typeConstraints;

@@ -37,10 +37,9 @@ namespace ApiContractGenerator.EnumReferenceResolvers
 
                 if (entirelyLoaded) return false;
 
-                ref var en = ref enumerator;
-                while (en.MoveNext())
+                while (enumerator.MoveNext())
                 {
-                    var definition = reader.GetTypeDefinition(en.Current);
+                    var definition = reader.GetTypeDefinition(enumerator.Current);
                     if (!TryGetEnumInfo(definition, out var currentInfo)) continue;
 
                     var currentName = GetNameSpec(definition);

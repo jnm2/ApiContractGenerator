@@ -77,29 +77,6 @@ namespace ApiContractGenerator.Source
             }
         }
 
-        // See https://github.com/dotnet/corefx/issues/13295 and
-        // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/src/System/Reflection/Metadata/MetadataReader.netstandard.cs
-        private static AssemblyName GetAssemblyNameFromAssemblyReference(MetadataReader reader, AssemblyReference reference)
-        {
-            var flags = reference.Flags;
-            var assemblyName = new AssemblyName(reader.GetString(reference.Name))
-            {
-                Version = reference.Version,
-                CultureName = reference.Culture.IsNil ? null : reader.GetString(reference.Culture),
-                Flags = (AssemblyNameFlags)(reference.Flags & (AssemblyFlags.PublicKey | AssemblyFlags.Retargetable | AssemblyFlags.EnableJitCompileTracking | AssemblyFlags.DisableJitCompileOptimizer)),
-                ContentType = (AssemblyContentType)((int)(flags & AssemblyFlags.ContentTypeMask) >> 9)
-            };
-
-            var publicKeyOrToken = reference.PublicKeyOrToken.IsNil ? null : reader.GetBlobBytes(reference.PublicKeyOrToken);
-
-            if ((flags & AssemblyFlags.PublicKey) != 0)
-                assemblyName.SetPublicKey(publicKeyOrToken);
-            else
-                assemblyName.SetPublicKeyToken(publicKeyOrToken);
-
-            return assemblyName;
-        }
-
         private static MetadataTypeReference GetTypeFromTypeReferenceHandle(MetadataReader reader, TypeReferenceHandle handle)
         {
             var nestedTypeNames = new List<StringHandle>();
@@ -115,7 +92,7 @@ namespace ApiContractGenerator.Source
             var assemblyReference = reader.GetAssemblyReference((AssemblyReferenceHandle)type.ResolutionScope);
 
             MetadataTypeReference current = new TopLevelTypeReference(
-                GetAssemblyNameFromAssemblyReference(reader, assemblyReference),
+                assemblyReference.GetAssemblyName(reader),
                 reader.GetString(type.Namespace),
                 reader.GetString(type.Name));
 

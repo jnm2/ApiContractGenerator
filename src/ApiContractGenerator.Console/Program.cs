@@ -42,7 +42,7 @@ namespace ApiContractGenerator.Console
                 new GacAssemblyReferenceResolver(),
                 new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(assemblyPath)));
 
-            using (var enumReferenceResolver = new MetadataReaderEnumReferenceResolver(assemblyResolver))
+            using (var enumReferenceResolver = new MetadataReaderEnumReferenceResolver(assemblyPath, assemblyResolver))
             using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath)))
             using (var outputFile = File.CreateText(outputPath))
                 generator.Generate(source, new CSharpTextFormatter(outputFile, enumReferenceResolver));

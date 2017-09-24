@@ -393,7 +393,18 @@ namespace ApiContractGenerator
             writer.Write('\'');
         }
 
-        public void Write(IMetadataConstantValue metadataConstantValue)
+        /// <summary>
+        /// Handles enums.
+        /// </summary>
+        private void WriteConstant(MetadataTypeReference type, IMetadataConstantValue metadataConstantValue, string currentNamespace, bool canTargetType)
+        {
+            if (type is PrimitiveTypeReference)
+                WriteConstantPrimitive(metadataConstantValue);
+            else
+                WriteEnumReferenceValue(type, metadataConstantValue, currentNamespace, canTargetType);
+        }
+
+        private void WriteConstantPrimitive(IMetadataConstantValue metadataConstantValue)
         {
             switch (metadataConstantValue.TypeCode)
             {
@@ -461,7 +472,7 @@ namespace ApiContractGenerator
             if (metadataField.DefaultValue != null)
             {
                 writer.Write(" = ");
-                Write(metadataField.DefaultValue);
+                WriteConstant(metadataField.FieldType, metadataField.DefaultValue, currentNamespace, canTargetType: true);
             }
 
             writer.WriteLine(';');
@@ -493,7 +504,7 @@ namespace ApiContractGenerator
                 WriteAttributes(field.Attributes, currentNamespace, newLines: true);
                 writer.Write(field.Name);
                 writer.Write(" = ");
-                Write(field.DefaultValue);
+                WriteConstantPrimitive(field.DefaultValue);
             }
             writer.WriteLine();
         }
@@ -565,7 +576,7 @@ namespace ApiContractGenerator
             if (metadataProperty.DefaultValue != null)
             {
                 writer.WriteLine(" = ");
-                Write(metadataProperty.DefaultValue);
+                WriteConstant(metadataProperty.PropertyType, metadataProperty.DefaultValue, currentNamespace, canTargetType: true);
             }
         }
 
@@ -644,7 +655,7 @@ namespace ApiContractGenerator
                 if (metadataParameter.IsOptional)
                 {
                     writer.Write(" = ");
-                    Write(metadataParameter.DefaultValue);
+                    WriteConstant(metadataParameter.ParameterType, metadataParameter.DefaultValue, currentNamespace, canTargetType: true);
                 }
             }
         }
@@ -959,7 +970,7 @@ namespace ApiContractGenerator
             switch (value)
             {
                 case ConstantAttributeValue constant:
-                    Write(constant.Value);
+                    WriteConstantPrimitive(constant.Value);
                     break;
 
                 case ArrayAttributeValue array:
@@ -994,7 +1005,7 @@ namespace ApiContractGenerator
                     break;
 
                 case EnumAttributeValue @enum:
-                    WriteEnumReferenceValue(@enum.EnumType, @enum.UnderlyingValue, currentNamespace);
+                    WriteEnumReferenceValue(@enum.EnumType, @enum.UnderlyingValue, currentNamespace, canTargetType: false);
                     break;
 
                 default:
@@ -1072,7 +1083,7 @@ namespace ApiContractGenerator
             }
         }
 
-        private void WriteEnumReferenceValue(MetadataTypeReference enumType, IMetadataConstantValue underlyingValue, string currentNamespace)
+        private void WriteEnumReferenceValue(MetadataTypeReference enumType, IMetadataConstantValue underlyingValue, string currentNamespace, bool canTargetType)
         {
             if (enumReferenceResolver.TryGetEnumInfo(enumType, out var info))
             {
@@ -1134,14 +1145,21 @@ namespace ApiContractGenerator
                 }
             }
 
-            writer.Write('(');
-            Write(enumType, currentNamespace);
-            writer.Write(')');
+            if (canTargetType && IsDefault(underlyingValue))
+            {
+                WriteConstantPrimitive(underlyingValue);
+            }
+            else
+            {
+                writer.Write('(');
+                Write(enumType, currentNamespace);
+                writer.Write(')');
 
-            var isNegative = IsNegativeInteger(underlyingValue);
-            if (isNegative) writer.Write('(');
-            Write(underlyingValue);
-            if (isNegative) writer.Write(')');
+                var isNegative = IsNegativeInteger(underlyingValue);
+                if (isNegative) writer.Write('(');
+                WriteConstantPrimitive(underlyingValue);
+                if (isNegative) writer.Write(')');
+            }
         }
 
         private static bool IsNegativeInteger(IMetadataConstantValue value)
@@ -1156,6 +1174,41 @@ namespace ApiContractGenerator
                     return value.GetValueAsInt32() < 0;
                 case ConstantTypeCode.Int64:
                     return value.GetValueAsInt64() < 0;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsDefault(IMetadataConstantValue value)
+        {
+            switch (value.TypeCode)
+            {
+                case ConstantTypeCode.Boolean:
+                    return value.GetValueAsBoolean() == default(bool);
+                case ConstantTypeCode.Char:
+                    return value.GetValueAsChar() == default(char);
+                case ConstantTypeCode.SByte:
+                    return value.GetValueAsSByte() == default(sbyte);
+                case ConstantTypeCode.Byte:
+                    return value.GetValueAsByte() == default(byte);
+                case ConstantTypeCode.Int16:
+                    return value.GetValueAsInt16() == default(short);
+                case ConstantTypeCode.UInt16:
+                    return value.GetValueAsInt16() == default(ushort);
+                case ConstantTypeCode.Int32:
+                    return value.GetValueAsInt32() == default(int);
+                case ConstantTypeCode.UInt32:
+                    return value.GetValueAsUInt32() == default(uint);
+                case ConstantTypeCode.Int64:
+                    return value.GetValueAsInt64() == default(long);
+                case ConstantTypeCode.UInt64:
+                    return value.GetValueAsUInt64() == default(ulong);
+                case ConstantTypeCode.Single:
+                    return value.GetValueAsSingle() == default(float);
+                case ConstantTypeCode.Double:
+                    return value.GetValueAsDouble() == default(double);
+                case ConstantTypeCode.String:
+                    return value.GetValueAsString() == default(string);
                 default:
                     return false;
             }

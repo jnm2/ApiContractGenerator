@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
     public struct EnumInfo
     {

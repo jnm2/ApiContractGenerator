@@ -1,8 +1,8 @@
 using ApiContractGenerator.Model.TypeReferences;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
-    public interface IEnumReferenceResolver
+    public interface IMetadataReferenceResolver
     {
         bool TryGetEnumInfo(MetadataTypeReference typeReference, out EnumInfo info);
     }

@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using ApiContractGenerator.EnumReferenceResolvers;
+using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
 
@@ -16,11 +16,11 @@ namespace ApiContractGenerator.Source
         private readonly MetadataReader reader;
         private readonly TypeReferenceTypeProvider typeProvider;
 
-        public MetadataReaderSource(Stream stream, IEnumReferenceResolver enumReferenceResolver)
+        public MetadataReaderSource(Stream stream, IMetadataReferenceResolver metadataReferenceResolver)
         {
             peReader = new PEReader(stream);
             reader = peReader.GetMetadataReader();
-            typeProvider = new TypeReferenceTypeProvider(enumReferenceResolver);
+            typeProvider = new TypeReferenceTypeProvider(metadataReferenceResolver);
         }
 
         public void Dispose()

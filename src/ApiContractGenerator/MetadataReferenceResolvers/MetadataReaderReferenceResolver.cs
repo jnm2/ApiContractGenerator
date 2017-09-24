@@ -7,9 +7,9 @@ using System.Reflection.PortableExecutable;
 using ApiContractGenerator.AssemblyReferenceResolvers;
 using ApiContractGenerator.Model.TypeReferences;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
-    public sealed partial class MetadataReaderEnumReferenceResolver : IEnumReferenceResolver, IDisposable
+    public sealed partial class MetadataReaderReferenceResolver : IMetadataReferenceResolver, IDisposable
     {
         private readonly string currentAssemblyPath;
         private AssemblyLazyLoader currentAssemblyLoader;
@@ -18,7 +18,7 @@ namespace ApiContractGenerator.EnumReferenceResolvers
 
         private readonly Dictionary<string, AssemblyLazyLoader> assemblyLoadersByFullName = new Dictionary<string, AssemblyLazyLoader>();
 
-        public MetadataReaderEnumReferenceResolver(string currentAssemblyPath, IAssemblyReferenceResolver assemblyResolver)
+        public MetadataReaderReferenceResolver(string currentAssemblyPath, IAssemblyReferenceResolver assemblyResolver)
         {
             this.currentAssemblyPath = currentAssemblyPath ?? throw new ArgumentNullException(nameof(currentAssemblyPath));
             this.assemblyResolver = assemblyResolver ?? throw new ArgumentNullException(nameof(assemblyResolver));

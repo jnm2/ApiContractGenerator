@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using ApiContractGenerator.Model;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
     [DebuggerDisplay("{ToString(),nq}")]
     public struct EnumFieldInfo : IComparable<EnumFieldInfo>

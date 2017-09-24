@@ -6,9 +6,9 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using ApiContractGenerator.Model;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
-    public sealed partial class MetadataReaderEnumReferenceResolver
+    public sealed partial class MetadataReaderReferenceResolver
     {
         private sealed partial class AssemblyLazyLoader : IDisposable
         {

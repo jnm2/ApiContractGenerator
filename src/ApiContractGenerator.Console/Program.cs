@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using ApiContractGenerator.AssemblyReferenceResolvers;
-using ApiContractGenerator.EnumReferenceResolvers;
+using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator.Console
@@ -42,10 +42,10 @@ namespace ApiContractGenerator.Console
                 new GacAssemblyReferenceResolver(),
                 new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(assemblyPath)));
 
-            using (var enumReferenceResolver = new MetadataReaderEnumReferenceResolver(assemblyPath, assemblyResolver))
-            using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath), enumReferenceResolver))
+            using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(assemblyPath, assemblyResolver))
+            using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath), metadataReferenceResolver))
             using (var outputFile = File.CreateText(outputPath))
-                generator.Generate(source, new CSharpTextFormatter(outputFile, enumReferenceResolver));
+                generator.Generate(source, new CSharpTextFormatter(outputFile, metadataReferenceResolver));
         }
     }
 }

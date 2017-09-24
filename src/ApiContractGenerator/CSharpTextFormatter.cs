@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
-using ApiContractGenerator.EnumReferenceResolvers;
+using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.AttributeValues;
 using ApiContractGenerator.Model.TypeReferences;
@@ -14,13 +14,13 @@ namespace ApiContractGenerator
     public sealed partial class CSharpTextFormatter : IMetadataWriter
     {
         private readonly IndentedTextWriter writer;
-        private readonly IEnumReferenceResolver enumReferenceResolver;
+        private readonly IMetadataReferenceResolver metadataReferenceResolver;
         private readonly bool spaceLines;
 
-        public CSharpTextFormatter(TextWriter writer, IEnumReferenceResolver enumReferenceResolver, bool spaceLines = true)
+        public CSharpTextFormatter(TextWriter writer, IMetadataReferenceResolver metadataReferenceResolver, bool spaceLines = true)
         {
             this.writer = new IndentedTextWriter(writer);
-            this.enumReferenceResolver = enumReferenceResolver;
+            this.metadataReferenceResolver = metadataReferenceResolver;
             this.spaceLines = spaceLines;
         }
 
@@ -1100,7 +1100,7 @@ namespace ApiContractGenerator
 
         private void WriteEnumReferenceValue(MetadataTypeReference enumType, IMetadataConstantValue underlyingValue, string currentNamespace, bool canTargetType)
         {
-            if (enumReferenceResolver.TryGetEnumInfo(enumType, out var info))
+            if (metadataReferenceResolver.TryGetEnumInfo(enumType, out var info))
             {
                 var flagsToSearchFor = info.IsFlags ? ConvertEnumValueToUInt64(underlyingValue) : 0;
                 if (flagsToSearchFor == 0)

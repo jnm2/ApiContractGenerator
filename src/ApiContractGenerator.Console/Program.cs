@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using ApiContractGenerator.AssemblyReferenceResolvers;
+using ApiContractGenerator.EnumReferenceResolvers;
 using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator.Console
@@ -36,9 +38,14 @@ namespace ApiContractGenerator.Console
                 IgnoredNamespaces = { "NUnit.Framework.Internal" }
             };
 
-            using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath)))
+            var assemblyResolver = new CompositeAssemblyReferenceResolver(
+                new GacAssemblyReferenceResolver(),
+                new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(assemblyPath)));
+
+            using (var enumReferenceResolver = new MetadataReaderEnumReferenceResolver(assemblyPath, assemblyResolver))
+            using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath), enumReferenceResolver))
             using (var outputFile = File.CreateText(outputPath))
-                generator.Generate(source, new CSharpTextFormatter(outputFile));
+                generator.Generate(source, new CSharpTextFormatter(outputFile, enumReferenceResolver));
         }
     }
 }

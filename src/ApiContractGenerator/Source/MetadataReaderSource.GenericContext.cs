@@ -19,7 +19,7 @@ namespace ApiContractGenerator.Source
                 MethodParameters = methodParameters;
             }
 
-            private static void FillArray(IMetadataGenericTypeParameter[] array, GenericContext genericContext, MetadataReader reader, GenericParameterHandleCollection genericParameters)
+            private static void FillArray(IMetadataGenericTypeParameter[] array, GenericContext genericContext, MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericParameterHandleCollection genericParameters)
             {
                 foreach (var handle in genericParameters)
                 {
@@ -27,11 +27,11 @@ namespace ApiContractGenerator.Source
 
                     // It's okay to pass in genericContext as we fill the array.
                     // It's coupling to an implementation detail in the same class.
-                    array[genericParameter.Index] = new ReaderGenericTypeParameter(reader, genericParameter, genericContext);
+                    array[genericParameter.Index] = new ReaderGenericTypeParameter(reader, typeProvider, genericParameter, genericContext);
                 }
             }
 
-            public static GenericContext FromType(MetadataReader reader, TypeDefinition definition)
+            public static GenericContext FromType(MetadataReader reader, TypeReferenceTypeProvider typeProvider, TypeDefinition definition)
             {
                 var empty = Array.Empty<IMetadataGenericTypeParameter>();
                 var genericParameters = definition.GetGenericParameters();
@@ -39,19 +39,19 @@ namespace ApiContractGenerator.Source
 
                 var r = new IMetadataGenericTypeParameter[genericParameters.Count];
                 var genericContext = new GenericContext(r, empty);
-                FillArray(r, genericContext, reader, genericParameters);
+                FillArray(r, genericContext, reader, typeProvider, genericParameters);
 
                 return genericContext;
             }
 
-            public static GenericContext FromMethod(MetadataReader reader, GenericContext declaringTypeGenericContext, MethodDefinition definition)
+            public static GenericContext FromMethod(MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericContext declaringTypeGenericContext, MethodDefinition definition)
             {
                 var genericParameters = definition.GetGenericParameters();
                 if (genericParameters.Count == 0) return declaringTypeGenericContext;
 
                 var r = new IMetadataGenericTypeParameter[genericParameters.Count];
                 var genericContext = new GenericContext(declaringTypeGenericContext.TypeParameters, r);
-                FillArray(r, genericContext, reader, genericParameters);
+                FillArray(r, genericContext, reader, typeProvider, genericParameters);
 
                 return genericContext;
             }

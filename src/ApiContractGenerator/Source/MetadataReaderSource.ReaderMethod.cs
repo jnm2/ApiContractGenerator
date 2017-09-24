@@ -12,12 +12,14 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderMethod : IMetadataMethod
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly MethodDefinition definition;
             private readonly GenericContext declaringTypeGenericContext;
 
-            public ReaderMethod(MetadataReader reader, MethodDefinition definition, GenericContext declaringTypeGenericContext)
+            public ReaderMethod(MetadataReader reader, TypeReferenceTypeProvider typeProvider, MethodDefinition definition, GenericContext declaringTypeGenericContext)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
                 this.declaringTypeGenericContext = declaringTypeGenericContext;
             }
@@ -28,13 +30,17 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (genericContext == null)
-                        genericContext = GenericContext.FromMethod(reader, declaringTypeGenericContext, definition);
+                        genericContext = GenericContext.FromMethod(reader, typeProvider, declaringTypeGenericContext, definition);
                     return genericContext.Value;
                 }
             }
 
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
+
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), GenericContext));
 
             public MetadataVisibility Visibility
             {
@@ -67,7 +73,7 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (signature == null)
-                        signature = definition.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
+                        signature = definition.DecodeSignature(typeProvider, GenericContext);
                     return signature.Value;
                 }
             }
@@ -92,7 +98,7 @@ namespace ApiContractGenerator.Source
                             if (parameter.SequenceNumber == 0) continue;
                             if (maxSequenceNumber < parameter.SequenceNumber) maxSequenceNumber = parameter.SequenceNumber;
                             var parameterIndex = parameter.SequenceNumber - 1;
-                            r[parameterIndex] = new ReaderParameter(reader, parameter, signature.ParameterTypes[parameterIndex]);
+                            r[parameterIndex] = new ReaderParameter(reader, typeProvider, parameter, GenericContext, signature.ParameterTypes[parameterIndex]);
                         }
 
                         if (maxSequenceNumber != r.Length)

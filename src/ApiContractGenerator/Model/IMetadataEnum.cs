@@ -1,5 +1,4 @@
 using ApiContractGenerator.Model.TypeReferences;
-using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator.Model
 {

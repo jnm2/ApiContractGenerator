@@ -9,7 +9,7 @@ namespace ApiContractGenerator.Source
     {
         private sealed class ReaderEnum : ReaderClassBase, IMetadataEnum
         {
-            public ReaderEnum(MetadataReader reader, TypeDefinition definition) : base(reader, definition)
+            public ReaderEnum(MetadataReader reader, TypeReferenceTypeProvider typeProvider, TypeDefinition definition) : base(reader, typeProvider, definition)
             {
             }
 
@@ -23,7 +23,7 @@ namespace ApiContractGenerator.Source
                     }
                     else
                     {
-                        underlyingType = field.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
+                        underlyingType = field.DecodeSignature(TypeProvider, GenericContext);
                     }
                 }
             }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
@@ -10,18 +11,24 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderField : IMetadataField
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly FieldDefinition definition;
             private readonly GenericContext genericContext;
 
-            public ReaderField(MetadataReader reader, FieldDefinition definition, GenericContext genericContext)
+            public ReaderField(MetadataReader reader, TypeReferenceTypeProvider typeProvider, FieldDefinition definition, GenericContext genericContext)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
                 this.genericContext = genericContext;
             }
 
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
+
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), genericContext));
 
             public MetadataVisibility Visibility
             {
@@ -46,7 +53,7 @@ namespace ApiContractGenerator.Source
 
             private MetadataTypeReference fieldType;
             public MetadataTypeReference FieldType =>
-                fieldType ?? (fieldType = definition.DecodeSignature(SignatureTypeProvider.Instance, genericContext));
+                fieldType ?? (fieldType = definition.DecodeSignature(typeProvider, genericContext));
 
 
             private ReaderConstantValue defaultValue;

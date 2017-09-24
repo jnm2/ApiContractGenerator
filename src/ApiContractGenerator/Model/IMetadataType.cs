@@ -5,6 +5,7 @@ namespace ApiContractGenerator.Model
 {
     public interface IMetadataType : IMetadataSymbol
     {
+        IReadOnlyList<IMetadataAttribute> Attributes { get; }
         MetadataVisibility Visibility { get; }
         IReadOnlyList<IMetadataGenericTypeParameter> GenericTypeParameters { get; }
         MetadataTypeReference BaseType { get; }

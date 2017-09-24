@@ -9,7 +9,7 @@ namespace ApiContractGenerator.Source
     {
         private sealed class ReaderDelegate : ReaderClassBase, IMetadataDelegate
         {
-            public ReaderDelegate(MetadataReader reader, TypeDefinition definition) : base(reader, definition)
+            public ReaderDelegate(MetadataReader reader, TypeReferenceTypeProvider typeProvider, TypeDefinition definition) : base(reader, typeProvider, definition)
             {
             }
 
@@ -40,7 +40,7 @@ namespace ApiContractGenerator.Source
                 get
                 {
                     if (invokeMethodSignature == null)
-                        invokeMethodSignature = InvokeMethod.DecodeSignature(SignatureTypeProvider.Instance, GenericContext);
+                        invokeMethodSignature = InvokeMethod.DecodeSignature(TypeProvider, GenericContext);
                     return invokeMethodSignature.Value;
                 }
             }
@@ -61,7 +61,7 @@ namespace ApiContractGenerator.Source
                         {
                             var parameter = Reader.GetParameter(handle);
                             var parameterIndex = parameter.SequenceNumber - 1;
-                            r[parameterIndex] = new ReaderParameter(Reader, parameter, signature.ParameterTypes[parameterIndex]);
+                            r[parameterIndex] = new ReaderParameter(Reader, TypeProvider, parameter, GenericContext, signature.ParameterTypes[parameterIndex]);
                         }
                         parameters = r;
                     }

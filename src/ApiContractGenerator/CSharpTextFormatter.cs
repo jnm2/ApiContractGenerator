@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
+using ApiContractGenerator.EnumReferenceResolvers;
 using ApiContractGenerator.Model;
+using ApiContractGenerator.Model.AttributeValues;
 using ApiContractGenerator.Model.TypeReferences;
 using ApiContractGenerator.Source;
 
@@ -12,11 +14,13 @@ namespace ApiContractGenerator
     public sealed partial class CSharpTextFormatter : IMetadataWriter
     {
         private readonly IndentedTextWriter writer;
+        private readonly IEnumReferenceResolver enumReferenceResolver;
         private readonly bool spaceLines;
 
-        public CSharpTextFormatter(TextWriter writer, bool spaceLines = true)
+        public CSharpTextFormatter(TextWriter writer, IEnumReferenceResolver enumReferenceResolver, bool spaceLines = true)
         {
             this.writer = new IndentedTextWriter(writer);
+            this.enumReferenceResolver = enumReferenceResolver;
             this.spaceLines = spaceLines;
         }
 
@@ -62,7 +66,7 @@ namespace ApiContractGenerator
             }
         }
 
-        private void WriteTypeNameAndGenericSignature(IMetadataType type, int declaringTypeNumGenericParameters)
+        private void WriteTypeNameAndGenericSignature(IMetadataType type, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             var genericParameters = type.GenericTypeParameters;
             if (genericParameters.Count == 0)
@@ -84,11 +88,11 @@ namespace ApiContractGenerator
                     type.Name.CopyTo(0, buffer, 0, buffer.Length);
                     writer.Write(buffer);
                 }
-                WriteGenericSignature(type.GenericTypeParameters, declaringTypeNumGenericParameters);
+                WriteGenericSignature(type.GenericTypeParameters, currentNamespace, declaringTypeNumGenericParameters);
             }
         }
 
-        private void WriteGenericSignature(IReadOnlyList<IMetadataGenericTypeParameter> genericParameters, int numToSkip)
+        private void WriteGenericSignature(IReadOnlyList<IMetadataGenericTypeParameter> genericParameters, string currentNamespace, int numToSkip)
         {
             if (numToSkip >= genericParameters.Count) return;
 
@@ -97,7 +101,9 @@ namespace ApiContractGenerator
             for (var i = numToSkip; i < genericParameters.Count; i++)
             {
                 if (i != numToSkip) writer.Write(", ");
+
                 var parameter = genericParameters[i];
+                WriteAttributes(parameter.Attributes, currentNamespace, newLines: false);
                 if (parameter.IsContravariant) writer.Write("in ");
                 if (parameter.IsCovariant) writer.Write("out ");
                 writer.Write(parameter.Name);
@@ -392,7 +398,7 @@ namespace ApiContractGenerator
             switch (metadataConstantValue.TypeCode)
             {
                 case ConstantTypeCode.Boolean:
-                    WriteStringLiteral(metadataConstantValue.GetValueAsBoolean() ? "true" : "false");
+                    writer.Write(metadataConstantValue.GetValueAsBoolean() ? "true" : "false");
                     break;
                 case ConstantTypeCode.Char:
                     WriteCharLiteral(metadataConstantValue.GetValueAsChar());
@@ -438,6 +444,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataField metadataField, string currentNamespace)
         {
+            WriteAttributes(metadataField.Attributes, currentNamespace, newLines: false);
             WriteVisibility(metadataField.Visibility);
 
             if (metadataField.IsLiteral)
@@ -460,37 +467,35 @@ namespace ApiContractGenerator
             writer.WriteLine(';');
         }
 
-        private void WriteEnumFields(IMetadataEnum metadataEnum)
+        private void WriteEnumFields(IMetadataEnum metadataEnum, string currentNamespace)
         {
-            switch (((PrimitiveTypeReference)metadataEnum.UnderlyingType).Code)
+            var fields = metadataEnum.Fields.Where(_ => _.IsLiteral).ToArray();
+            var sortInfo = new EnumFieldInfo[fields.Length];
+
+            for (var i = 0; i < fields.Length; i++)
             {
-                case PrimitiveTypeCode.Int32:
-                {
-                    var enumFields = new List<(string name, int value)>(metadataEnum.Fields.Count);
-                    foreach (var field in metadataEnum.Fields)
-                    {
-                        if (!field.IsLiteral) continue;
-                        enumFields.Add((field.Name, field.DefaultValue.GetValueAsInt32()));
-                    }
-
-                    enumFields.Sort((x, y) =>
-                    {
-                        var byValue = x.value.CompareTo(y.value);
-                        return byValue != 0 ? byValue : string.Compare(x.name, y.name, StringComparison.Ordinal);
-                    });
-
-                    for (var i = 0; i < enumFields.Count; i++)
-                    {
-                        if (i != 0) writer.WriteLine(',');
-                        var (name, value) = enumFields[i];
-                        writer.Write(name);
-                        writer.Write(" = ");
-                        writer.Write(value);
-                    }
-                    writer.WriteLine();
-                    break;
-                }
+                var field = fields[i];
+                sortInfo[i] = new EnumFieldInfo(field.Name, field.DefaultValue);
             }
+
+            Array.Sort(sortInfo, fields);
+
+            for (var i = 0; i < fields.Length; i++)
+            {
+                var field = fields[i];
+
+                if (i != 0)
+                {
+                    writer.WriteLine(',');
+                    if (field.Attributes.Count != 0) WriteLineSpacing();
+                }
+
+                WriteAttributes(field.Attributes, currentNamespace, newLines: true);
+                writer.Write(field.Name);
+                writer.Write(" = ");
+                Write(field.DefaultValue);
+            }
+            writer.WriteLine();
         }
 
         private void WriteMethodModifiers(MethodModifiers modifiers, bool declaringTypeIsInterface)
@@ -512,6 +517,8 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataProperty metadataProperty, IMetadataType declaringType, string currentNamespace)
         {
+            WriteAttributes(metadataProperty.Attributes, currentNamespace, newLines: true);
+
             var modifiers = MethodModifiers.CombineAccessors(metadataProperty.GetAccessor, metadataProperty.SetAccessor);
             var declaringTypeIsInterface = declaringType is IMetadataInterface;
             WriteMethodModifiers(modifiers, declaringTypeIsInterface);
@@ -564,6 +571,8 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataEvent metadataEvent, IMetadataType declaringType, string currentNamespace)
         {
+            WriteAttributes(metadataEvent.Attributes, currentNamespace, newLines: true);
+
             var modifiers = MethodModifiers.CombineAccessors(metadataEvent.AddAccessor, metadataEvent.RemoveAccessor, metadataEvent.RaiseAccessor);
             var declaringTypeIsInterface = declaringType is IMetadataInterface;
             WriteMethodModifiers(modifiers, declaringTypeIsInterface);
@@ -610,6 +619,7 @@ namespace ApiContractGenerator
                 if (i != 0) writer.Write(", ");
 
                 var metadataParameter = parameters[i];
+                WriteAttributes(metadataParameter.Attributes, currentNamespace, newLines: false);
 
                 if (metadataParameter.IsOut)
                 {
@@ -669,6 +679,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataMethod metadataMethod, IMetadataType declaringType, string currentNamespace)
         {
+            WriteAttributes(metadataMethod.Attributes, currentNamespace, newLines: true);
             WriteMethodModifiers(MethodModifiers.FromMethod(metadataMethod), declaringType is IMetadataInterface);
 
             if (metadataMethod.Name == ".ctor")
@@ -695,7 +706,7 @@ namespace ApiContractGenerator
                 }
             }
 
-            WriteGenericSignature(metadataMethod.GenericTypeParameters, numToSkip: 0);
+            WriteGenericSignature(metadataMethod.GenericTypeParameters, currentNamespace, numToSkip: 0);
             writer.Write('(');
             WriteParameters(metadataMethod.Parameters, currentNamespace);
             writer.Write(')');
@@ -714,7 +725,7 @@ namespace ApiContractGenerator
             {
                 if (metadataEnum.Fields.Count != 0)
                 {
-                    WriteEnumFields(metadataEnum);
+                    WriteEnumFields(metadataEnum, currentNamespace);
                     isFirst = false;
                 }
             }
@@ -822,7 +833,7 @@ namespace ApiContractGenerator
             }
         }
 
-        public void Write(IMetadataType metadataType, string currentNamespace, int declaringTypeNumGenericParameters)
+        private void Write(IMetadataType metadataType, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             switch (metadataType)
             {
@@ -846,6 +857,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataClass metadataClass, string currentNamespace, int declaringTypeNumGenericParameters)
         {
+            WriteAttributes(metadataClass.Attributes, currentNamespace, newLines: true);
             WriteVisibility(metadataClass.Visibility);
 
             if (metadataClass.IsStatic)
@@ -856,7 +868,7 @@ namespace ApiContractGenerator
                 writer.Write("sealed ");
 
             writer.Write("class ");
-            WriteTypeNameAndGenericSignature(metadataClass, declaringTypeNumGenericParameters);
+            WriteTypeNameAndGenericSignature(metadataClass, currentNamespace, declaringTypeNumGenericParameters);
             WriteBaseTypeAndInterfaces(metadataClass, currentNamespace);
             WriteGenericConstraints(metadataClass.GenericTypeParameters, currentNamespace);
             writer.WriteLine();
@@ -865,18 +877,20 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataStruct metadataStruct, string currentNamespace, int declaringTypeNumGenericParameters)
         {
+            WriteAttributes(metadataStruct.Attributes, currentNamespace, newLines: true);
             WriteVisibility(metadataStruct.Visibility);
             writer.Write("struct ");
-            WriteTypeNameAndGenericSignature(metadataStruct, declaringTypeNumGenericParameters);
+            WriteTypeNameAndGenericSignature(metadataStruct, currentNamespace, declaringTypeNumGenericParameters);
             writer.WriteLine();
             WriteTypeMembers(metadataStruct, currentNamespace);
         }
 
         public void Write(IMetadataInterface metadataInterface, string currentNamespace, int declaringTypeNumGenericParameters)
         {
+            WriteAttributes(metadataInterface.Attributes, currentNamespace, newLines: true);
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
-            WriteTypeNameAndGenericSignature(metadataInterface, declaringTypeNumGenericParameters);
+            WriteTypeNameAndGenericSignature(metadataInterface, currentNamespace, declaringTypeNumGenericParameters);
             WriteBaseTypeAndInterfaces(metadataInterface, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataInterface, currentNamespace);
@@ -884,9 +898,10 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataEnum metadataEnum, string currentNamespace, int declaringTypeNumGenericParameters)
         {
+            WriteAttributes(metadataEnum.Attributes, currentNamespace, newLines: true);
             WriteVisibility(metadataEnum.Visibility);
             writer.Write("enum ");
-            WriteTypeNameAndGenericSignature(metadataEnum, declaringTypeNumGenericParameters);
+            WriteTypeNameAndGenericSignature(metadataEnum, currentNamespace, declaringTypeNumGenericParameters);
             writer.Write(" : ");
             Write(metadataEnum.UnderlyingType, currentNamespace);
             writer.WriteLine();
@@ -895,14 +910,352 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataDelegate metadataDelegate, string currentNamespace, int declaringTypeNumGenericParameters)
         {
+            WriteAttributes(metadataDelegate.Attributes, currentNamespace, newLines: true);
             WriteVisibility(metadataDelegate.Visibility);
             writer.Write("delegate ");
             Write(metadataDelegate.ReturnType, currentNamespace);
             writer.Write(' ');
-            WriteTypeNameAndGenericSignature(metadataDelegate, declaringTypeNumGenericParameters);
+            WriteTypeNameAndGenericSignature(metadataDelegate, currentNamespace, declaringTypeNumGenericParameters);
             writer.Write('(');
             WriteParameters(metadataDelegate.Parameters, currentNamespace);
             writer.WriteLine(");");
+        }
+
+        private static bool TryShortenAttributeName(string fullAttributeName, out string shortenedAttributeName)
+        {
+            if (fullAttributeName.EndsWith("Attribute"))
+            {
+                shortenedAttributeName = fullAttributeName.Substring(0, fullAttributeName.Length - 9);
+                return true;
+            }
+
+            shortenedAttributeName = null;
+            return false;
+        }
+
+        private static MetadataTypeReference GetShortenedAttributeName(MetadataTypeReference fullAttributeName)
+        {
+            switch (fullAttributeName)
+            {
+                case TopLevelTypeReference topLevel:
+                {
+                    if (TryShortenAttributeName(topLevel.Name, out var shortened))
+                        return new TopLevelTypeReference(topLevel.Assembly, topLevel.Namespace, shortened);
+                    break;
+                }
+                case NestedTypeReference nested:
+                {
+                    if (TryShortenAttributeName(nested.Name, out var shortened))
+                        return new NestedTypeReference(nested.DeclaringType, shortened);
+                    break;
+                }
+            }
+
+            return null;
+        }
+
+        private void WriteAttributeArgumentValue(MetadataAttributeValue value, string currentNamespace)
+        {
+            switch (value)
+            {
+                case ConstantAttributeValue constant:
+                    Write(constant.Value);
+                    break;
+
+                case ArrayAttributeValue array:
+                    writer.Write("new ");
+
+                    if (array.Elements.Count == 0)
+                    {
+                        Write(array.ArrayType.ElementType, currentNamespace);
+                        writer.Write("[0]");
+                    }
+                    else
+                    {
+                        Write(array.ArrayType, currentNamespace);
+                        writer.Write(" { ");
+
+                        var isFirst = true;
+
+                        foreach (var element in array.Elements)
+                        {
+                            if (isFirst) isFirst = false; else writer.Write(", ");
+                            WriteAttributeArgumentValue(element, currentNamespace);
+                        }
+
+                        writer.Write(" }");
+                    }
+                    break;
+
+                case TypeAttributeValue type:
+                    writer.Write("typeof(");
+                    Write(type.Value, currentNamespace);
+                    writer.Write(')');
+                    break;
+
+                case EnumAttributeValue @enum:
+                    WriteEnumReferenceValue(@enum.EnumType, @enum.UnderlyingValue, currentNamespace);
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private static bool Equals(IMetadataConstantValue x, IMetadataConstantValue y)
+        {
+            if (x == null) throw new ArgumentNullException(nameof(x));
+            if (y == null) throw new ArgumentNullException(nameof(y));
+            if (x.TypeCode != y.TypeCode) return false;
+
+            switch (x.TypeCode)
+            {
+                case ConstantTypeCode.NullReference:
+                    return true;
+                case ConstantTypeCode.Boolean:
+                    return x.GetValueAsBoolean() == y.GetValueAsBoolean();
+                case ConstantTypeCode.Char:
+                    return x.GetValueAsChar() == y.GetValueAsChar();
+                case ConstantTypeCode.SByte:
+                    return x.GetValueAsSByte() == y.GetValueAsSByte();
+                case ConstantTypeCode.Byte:
+                    return x.GetValueAsByte() == y.GetValueAsByte();
+                case ConstantTypeCode.Int16:
+                    return x.GetValueAsInt16() == y.GetValueAsInt16();
+                case ConstantTypeCode.UInt16:
+                    return x.GetValueAsUInt16() == y.GetValueAsUInt16();
+                case ConstantTypeCode.Int32:
+                    return x.GetValueAsInt32() == y.GetValueAsInt32();
+                case ConstantTypeCode.UInt32:
+                    return x.GetValueAsUInt32() == y.GetValueAsUInt32();
+                case ConstantTypeCode.Int64:
+                    return x.GetValueAsInt64() == y.GetValueAsInt64();
+                case ConstantTypeCode.UInt64:
+                    return x.GetValueAsUInt64() == y.GetValueAsUInt64();
+                case ConstantTypeCode.Single:
+                    return x.GetValueAsSingle() == y.GetValueAsSingle();
+                case ConstantTypeCode.Double:
+                    return x.GetValueAsDouble() == y.GetValueAsDouble();
+                case ConstantTypeCode.String:
+                    return x.GetValueAsString() == y.GetValueAsString();
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private static ulong ConvertEnumValueToUInt64(IMetadataConstantValue value)
+        {
+            switch (value?.TypeCode)
+            {
+                case ConstantTypeCode.Boolean:
+                    return value.GetValueAsBoolean() ? 1ul : 0ul;
+                case ConstantTypeCode.Char:
+                    return value.GetValueAsChar();
+                case ConstantTypeCode.SByte:
+                    return unchecked((ulong)value.GetValueAsSByte());
+                case ConstantTypeCode.Byte:
+                    return value.GetValueAsByte();
+                case ConstantTypeCode.Int16:
+                    return unchecked((ulong)value.GetValueAsInt16());
+                case ConstantTypeCode.UInt16:
+                    return value.GetValueAsUInt16();
+                case ConstantTypeCode.Int32:
+                    return unchecked((ulong)value.GetValueAsInt32());
+                case ConstantTypeCode.UInt32:
+                    return value.GetValueAsUInt32();
+                case ConstantTypeCode.Int64:
+                    return unchecked((ulong)value.GetValueAsInt64());
+                case ConstantTypeCode.UInt64:
+                    return value.GetValueAsUInt64();
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        private void WriteEnumReferenceValue(MetadataTypeReference enumType, IMetadataConstantValue underlyingValue, string currentNamespace)
+        {
+            if (enumReferenceResolver.TryGetEnumInfo(enumType, out var info))
+            {
+                var flagsToSearchFor = info.IsFlags ? ConvertEnumValueToUInt64(underlyingValue) : 0;
+                if (flagsToSearchFor == 0)
+                {
+                    foreach (var field in info.SortedFields)
+                    {
+                        if (Equals(field.Value, underlyingValue))
+                        {
+                            Write(enumType, currentNamespace);
+                            writer.Write('.');
+                            writer.Write(field.Name);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    var lastNegativeIndex = FindLastNegativeIndex(info);
+
+                    // Logic from https://github.com/dotnet/coreclr/blob/c4d7429096edc5779f1cbd999c972c3bae236085/src/mscorlib/src/System/Enum.cs#L179-L195
+                    // Since we don't sort by the unsigned value, the flags loop is split to search the negatives first.
+
+                    var fieldIndexes = new List<int>();
+
+                    for (var i = lastNegativeIndex; i >= 0; i--)
+                    {
+                        var fieldFlags = ConvertEnumValueToUInt64(info.SortedFields[i].Value);
+                        if ((flagsToSearchFor & fieldFlags) != fieldFlags) continue;
+                        flagsToSearchFor -= fieldFlags;
+                        fieldIndexes.Add(i);
+                        if (flagsToSearchFor == 0) break;
+                    }
+                    if (flagsToSearchFor != 0)
+                    {
+                        for (var i = info.SortedFields.Count - 1; i > lastNegativeIndex; i--)
+                        {
+                            var fieldFlags = ConvertEnumValueToUInt64(info.SortedFields[i].Value);
+                            if ((flagsToSearchFor & fieldFlags) != fieldFlags) continue;
+                            flagsToSearchFor -= fieldFlags;
+                            fieldIndexes.Add(i);
+                            if (flagsToSearchFor == 0) break;
+                        }
+                    }
+
+                    if (flagsToSearchFor == 0)
+                    {
+                        for (var i = fieldIndexes.Count - 1; i >= 0; i--)
+                        {
+                            Write(enumType, currentNamespace);
+                            writer.Write('.');
+                            writer.Write(info.SortedFields[fieldIndexes[i]].Name);
+                            if (i != 0) writer.Write(" | ");
+                        }
+
+                        return;
+                    }
+                }
+            }
+
+            writer.Write('(');
+            Write(enumType, currentNamespace);
+            writer.Write(')');
+
+            var isNegative = IsNegativeInteger(underlyingValue);
+            if (isNegative) writer.Write('(');
+            Write(underlyingValue);
+            if (isNegative) writer.Write(')');
+        }
+
+        private static bool IsNegativeInteger(IMetadataConstantValue value)
+        {
+            switch (value.TypeCode)
+            {
+                case ConstantTypeCode.SByte:
+                    return value.GetValueAsSByte() < 0;
+                case ConstantTypeCode.Int16:
+                    return value.GetValueAsInt16() < 0;
+                case ConstantTypeCode.Int32:
+                    return value.GetValueAsInt32() < 0;
+                case ConstantTypeCode.Int64:
+                    return value.GetValueAsInt64() < 0;
+                default:
+                    return false;
+            }
+        }
+
+        private static int FindLastNegativeIndex(EnumInfo enumInfo)
+        {
+            switch (enumInfo.UnderlyingType)
+            {
+                case PrimitiveTypeCode.SByte:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsSByte() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                case PrimitiveTypeCode.Int16:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsInt16() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                case PrimitiveTypeCode.Int32:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsInt32() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                case PrimitiveTypeCode.Int64:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsInt64() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                default:
+                    return -1;
+            }
+        }
+
+        private void WriteAttributes(IReadOnlyList<IMetadataAttribute> attributes, string currentNamespace, bool newLines)
+        {
+            if (attributes.Count == 0) return;
+
+            writer.Write('[');
+
+            for (var i = 0; i < attributes.Count; i++)
+            {
+                if (i != 0)
+                {
+                    if (newLines)
+                    {
+                        writer.WriteLine(']');
+                        writer.Write('[');
+                    }
+                    else
+                    {
+                        writer.Write(", ");
+                    }
+                }
+
+                var attribute = attributes[i];
+                Write(GetShortenedAttributeName(attribute.AttributeType), currentNamespace);
+
+                var namedArgs = attribute.NamedArguments;
+                var fixedArgs = attribute.FixedArguments;
+                if (namedArgs.Count != 0 || fixedArgs.Count != 0)
+                {
+                    writer.Write('(');
+
+                    var isFirst = true;
+
+                    foreach (var arg in fixedArgs)
+                    {
+                        if (isFirst) isFirst = false; else writer.Write(", ");
+                        WriteAttributeArgumentValue(arg, currentNamespace);
+                    }
+
+                    foreach (var arg in namedArgs)
+                    {
+                        if (isFirst) isFirst = false; else writer.Write(", ");
+                        writer.Write(arg.Name);
+                        writer.Write(" = ");
+                        WriteAttributeArgumentValue(arg.Value, currentNamespace);
+                    }
+
+                    writer.Write(')');
+                }
+            }
+
+            if (newLines)
+                writer.WriteLine(']');
+            else
+                writer.Write("] ");
         }
 
         private void Write(MetadataTypeReference typeReference, string currentNamespace)

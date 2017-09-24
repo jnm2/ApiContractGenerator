@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
@@ -10,17 +11,25 @@ namespace ApiContractGenerator.Source
         private sealed class ReaderParameter : IMetadataParameter
         {
             private readonly MetadataReader reader;
+            private readonly TypeReferenceTypeProvider typeProvider;
             private readonly Parameter definition;
+            private readonly GenericContext genericContext;
 
-            public ReaderParameter(MetadataReader reader, Parameter definition, MetadataTypeReference parameterType)
+            public ReaderParameter(MetadataReader reader, TypeReferenceTypeProvider typeProvider, Parameter definition, GenericContext genericContext, MetadataTypeReference parameterType)
             {
                 this.reader = reader;
+                this.typeProvider = typeProvider;
                 this.definition = definition;
+                this.genericContext = genericContext;
                 ParameterType = parameterType;
             }
 
             private string name;
             public string Name => name ?? (name = reader.GetString(definition.Name));
+
+            private IReadOnlyList<IMetadataAttribute> attributes;
+            public IReadOnlyList<IMetadataAttribute> Attributes => attributes ?? (attributes =
+                GetAttributes(reader, typeProvider, definition.GetCustomAttributes(), genericContext));
 
             public bool IsIn => (definition.Attributes & ParameterAttributes.In) != 0;
             public bool IsOut => (definition.Attributes & ParameterAttributes.Out) != 0;

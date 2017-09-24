@@ -1043,17 +1043,92 @@ namespace ApiContractGenerator
             }
         }
 
+        private static ulong ConvertEnumValueToUInt64(IMetadataConstantValue value)
+        {
+            switch (value?.TypeCode)
+            {
+                case ConstantTypeCode.Boolean:
+                    return value.GetValueAsBoolean() ? 1ul : 0ul;
+                case ConstantTypeCode.Char:
+                    return value.GetValueAsChar();
+                case ConstantTypeCode.SByte:
+                    return unchecked((ulong)value.GetValueAsSByte());
+                case ConstantTypeCode.Byte:
+                    return value.GetValueAsByte();
+                case ConstantTypeCode.Int16:
+                    return unchecked((ulong)value.GetValueAsInt16());
+                case ConstantTypeCode.UInt16:
+                    return value.GetValueAsUInt16();
+                case ConstantTypeCode.Int32:
+                    return unchecked((ulong)value.GetValueAsInt32());
+                case ConstantTypeCode.UInt32:
+                    return value.GetValueAsUInt32();
+                case ConstantTypeCode.Int64:
+                    return unchecked((ulong)value.GetValueAsInt64());
+                case ConstantTypeCode.UInt64:
+                    return value.GetValueAsUInt64();
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
         private void WriteEnumReferenceValue(MetadataTypeReference enumType, IMetadataConstantValue underlyingValue, string currentNamespace)
         {
             if (enumReferenceResolver.TryGetEnumInfo(enumType, out var info))
             {
-                foreach (var field in info.SortedFields)
+                var flagsToSearchFor = info.IsFlags ? ConvertEnumValueToUInt64(underlyingValue) : 0;
+                if (flagsToSearchFor == 0)
                 {
-                    if (Equals(field.Value, underlyingValue))
+                    foreach (var field in info.SortedFields)
                     {
-                        Write(enumType, currentNamespace);
-                        writer.Write('.');
-                        writer.Write(field.Name);
+                        if (Equals(field.Value, underlyingValue))
+                        {
+                            Write(enumType, currentNamespace);
+                            writer.Write('.');
+                            writer.Write(field.Name);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    var lastNegativeIndex = FindLastNegativeIndex(info);
+
+                    // Logic from https://github.com/dotnet/coreclr/blob/c4d7429096edc5779f1cbd999c972c3bae236085/src/mscorlib/src/System/Enum.cs#L179-L195
+                    // Since we don't sort by the unsigned value, the flags loop is split to search the negatives first.
+
+                    var fieldIndexes = new List<int>();
+
+                    for (var i = lastNegativeIndex; i >= 0; i--)
+                    {
+                        var fieldFlags = ConvertEnumValueToUInt64(info.SortedFields[i].Value);
+                        if ((flagsToSearchFor & fieldFlags) != fieldFlags) continue;
+                        flagsToSearchFor -= fieldFlags;
+                        fieldIndexes.Add(i);
+                        if (flagsToSearchFor == 0) break;
+                    }
+                    if (flagsToSearchFor != 0)
+                    {
+                        for (var i = info.SortedFields.Count - 1; i > lastNegativeIndex; i--)
+                        {
+                            var fieldFlags = ConvertEnumValueToUInt64(info.SortedFields[i].Value);
+                            if ((flagsToSearchFor & fieldFlags) != fieldFlags) continue;
+                            flagsToSearchFor -= fieldFlags;
+                            fieldIndexes.Add(i);
+                            if (flagsToSearchFor == 0) break;
+                        }
+                    }
+
+                    if (flagsToSearchFor == 0)
+                    {
+                        for (var i = fieldIndexes.Count - 1; i >= 0; i--)
+                        {
+                            Write(enumType, currentNamespace);
+                            writer.Write('.');
+                            writer.Write(info.SortedFields[fieldIndexes[i]].Name);
+                            if (i != 0) writer.Write(" | ");
+                        }
+
                         return;
                     }
                 }
@@ -1083,6 +1158,47 @@ namespace ApiContractGenerator
                     return value.GetValueAsInt64() < 0;
                 default:
                     return false;
+            }
+        }
+
+        private static int FindLastNegativeIndex(EnumInfo enumInfo)
+        {
+            switch (enumInfo.UnderlyingType)
+            {
+                case PrimitiveTypeCode.SByte:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsSByte() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                case PrimitiveTypeCode.Int16:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsInt16() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                case PrimitiveTypeCode.Int32:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsInt32() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                case PrimitiveTypeCode.Int64:
+                {
+                    var maxIndex = enumInfo.SortedFields.Count - 1;
+                    for (var i = 0; i <= maxIndex; i++)
+                        if (enumInfo.SortedFields[i].Value.GetValueAsInt64() >= 0)
+                            return i - 1;
+                    return maxIndex;
+                }
+                default:
+                    return -1;
             }
         }
 

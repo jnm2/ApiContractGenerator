@@ -5,9 +5,9 @@ using System.Reflection;
 using System.Text;
 using ApiContractGenerator.Model.TypeReferences;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
-    public sealed partial class MetadataReaderEnumReferenceResolver
+    public sealed partial class MetadataReaderReferenceResolver
     {
         [DebuggerDisplay("{ToString(),nq}")]
         private struct NameSpec : IEquatable<NameSpec>

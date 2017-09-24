@@ -7,9 +7,9 @@ using System.Reflection.PortableExecutable;
 using ApiContractGenerator.AssemblyReferenceResolvers;
 using ApiContractGenerator.Model.TypeReferences;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
-    public sealed partial class MetadataReaderEnumReferenceResolver : IEnumReferenceResolver, IDisposable
+    public sealed partial class MetadataReaderReferenceResolver : IMetadataReferenceResolver, IDisposable
     {
         private readonly string currentAssemblyPath;
         private AssemblyLazyLoader currentAssemblyLoader;
@@ -18,13 +18,35 @@ namespace ApiContractGenerator.EnumReferenceResolvers
 
         private readonly Dictionary<string, AssemblyLazyLoader> assemblyLoadersByFullName = new Dictionary<string, AssemblyLazyLoader>();
 
-        public MetadataReaderEnumReferenceResolver(string currentAssemblyPath, IAssemblyReferenceResolver assemblyResolver)
+        public MetadataReaderReferenceResolver(string currentAssemblyPath, IAssemblyReferenceResolver assemblyResolver)
         {
             this.currentAssemblyPath = currentAssemblyPath ?? throw new ArgumentNullException(nameof(currentAssemblyPath));
             this.assemblyResolver = assemblyResolver ?? throw new ArgumentNullException(nameof(assemblyResolver));
         }
 
         public bool TryGetEnumInfo(MetadataTypeReference typeReference, out EnumInfo info)
+        {
+            if (TryGetCachedInfo(typeReference, out var cachedInfo) && cachedInfo.EnumInfo != null)
+            {
+                info = cachedInfo.EnumInfo.Value;
+                return true;
+            }
+            info = default(EnumInfo);
+            return false;
+        }
+
+        public bool TryGetIsValueType(MetadataTypeReference typeReference, out bool isValueType)
+        {
+            if (TryGetCachedInfo(typeReference, out var cachedInfo))
+            {
+                isValueType = cachedInfo.IsValueType;
+                return true;
+            }
+            isValueType = default(bool);
+            return false;
+        }
+
+        private bool TryGetCachedInfo(MetadataTypeReference typeReference, out CachedInfo cachedInfo)
         {
             var (assemblyName, typeName) = NameSpec.FromMetadataTypeReference(typeReference);
 
@@ -33,7 +55,7 @@ namespace ApiContractGenerator.EnumReferenceResolvers
                 if (currentAssemblyLoader == null)
                     currentAssemblyLoader = new AssemblyLazyLoader(currentAssemblyPath);
 
-                if (currentAssemblyLoader.TryGetEnumInfo(typeName, out info))
+                if (currentAssemblyLoader.TryGetInfo(typeName, out cachedInfo))
                     return true;
 
                 // Attribute values containing enum type references serialize the string.
@@ -56,11 +78,11 @@ namespace ApiContractGenerator.EnumReferenceResolvers
             if (loader == null)
             {
                 // We couldn't locate the assembly.
-                info = default(EnumInfo);
+                cachedInfo = default(CachedInfo);
                 return false;
             }
 
-            return loader.TryGetEnumInfo(typeName, out info);
+            return loader.TryGetInfo(typeName, out cachedInfo);
         }
 
         private static AssemblyName GetMscorlibReference(string assemblyPath)

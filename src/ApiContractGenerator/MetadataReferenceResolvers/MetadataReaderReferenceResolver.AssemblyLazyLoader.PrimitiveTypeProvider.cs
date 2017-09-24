@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using System.Reflection.Metadata;
 
-namespace ApiContractGenerator.EnumReferenceResolvers
+namespace ApiContractGenerator.MetadataReferenceResolvers
 {
-    partial class MetadataReaderEnumReferenceResolver
+    partial class MetadataReaderReferenceResolver
     {
         partial class AssemblyLazyLoader
         {

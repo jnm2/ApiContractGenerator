@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
-using ApiContractGenerator.EnumReferenceResolvers;
+using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.AttributeValues;
 using ApiContractGenerator.Model.TypeReferences;
@@ -14,13 +14,13 @@ namespace ApiContractGenerator
     public sealed partial class CSharpTextFormatter : IMetadataWriter
     {
         private readonly IndentedTextWriter writer;
-        private readonly IEnumReferenceResolver enumReferenceResolver;
+        private readonly IMetadataReferenceResolver metadataReferenceResolver;
         private readonly bool spaceLines;
 
-        public CSharpTextFormatter(TextWriter writer, IEnumReferenceResolver enumReferenceResolver, bool spaceLines = true)
+        public CSharpTextFormatter(TextWriter writer, IMetadataReferenceResolver metadataReferenceResolver, bool spaceLines = true)
         {
             this.writer = new IndentedTextWriter(writer);
-            this.enumReferenceResolver = enumReferenceResolver;
+            this.metadataReferenceResolver = metadataReferenceResolver;
             this.spaceLines = spaceLines;
         }
 
@@ -394,14 +394,41 @@ namespace ApiContractGenerator
         }
 
         /// <summary>
-        /// Handles enums.
+        /// Handles enums and reference and value type defaults.
         /// </summary>
         private void WriteConstant(MetadataTypeReference type, IMetadataConstantValue metadataConstantValue, string currentNamespace, bool canTargetType)
         {
             if (type is PrimitiveTypeReference)
+            {
                 WriteConstantPrimitive(metadataConstantValue);
+            }
+            else if (metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
+            {
+                if (metadataReferenceResolver.TryGetIsValueType(type, out var isValueType) && !isValueType)
+                {
+                    if (!canTargetType)
+                    {
+                        writer.Write('(');
+                        Write(type, currentNamespace);
+                        writer.Write(')');
+                    }
+                    writer.Write("null");
+                }
+                else
+                {
+                    writer.Write("default");
+                    if (!canTargetType)
+                    {
+                        writer.Write('(');
+                        Write(type, currentNamespace);
+                        writer.Write(')');
+                    }
+                }
+            }
             else
+            {
                 WriteEnumReferenceValue(type, metadataConstantValue, currentNamespace, canTargetType);
+            }
         }
 
         private void WriteConstantPrimitive(IMetadataConstantValue metadataConstantValue)
@@ -1085,7 +1112,7 @@ namespace ApiContractGenerator
 
         private void WriteEnumReferenceValue(MetadataTypeReference enumType, IMetadataConstantValue underlyingValue, string currentNamespace, bool canTargetType)
         {
-            if (enumReferenceResolver.TryGetEnumInfo(enumType, out var info))
+            if (metadataReferenceResolver.TryGetEnumInfo(enumType, out var info))
             {
                 var flagsToSearchFor = info.IsFlags ? ConvertEnumValueToUInt64(underlyingValue) : 0;
                 if (flagsToSearchFor == 0)

@@ -394,14 +394,29 @@ namespace ApiContractGenerator
         }
 
         /// <summary>
-        /// Handles enums.
+        /// Handles enums and reference and value type defaults.
         /// </summary>
         private void WriteConstant(MetadataTypeReference type, IMetadataConstantValue metadataConstantValue, string currentNamespace, bool canTargetType)
         {
             if (type is PrimitiveTypeReference)
+            {
                 WriteConstantPrimitive(metadataConstantValue);
+            }
+            else if (metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
+            {
+                // May be any non-primitive non-enum reference or value type.
+                writer.Write("default");
+                if (!canTargetType)
+                {
+                    writer.Write('(');
+                    Write(type, currentNamespace);
+                    writer.Write(')');
+                }
+            }
             else
+            {
                 WriteEnumReferenceValue(type, metadataConstantValue, currentNamespace, canTargetType);
+            }
         }
 
         private void WriteConstantPrimitive(IMetadataConstantValue metadataConstantValue)

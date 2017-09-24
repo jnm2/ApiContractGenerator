@@ -469,42 +469,33 @@ namespace ApiContractGenerator
 
         private void WriteEnumFields(IMetadataEnum metadataEnum, string currentNamespace)
         {
-            switch (((PrimitiveTypeReference)metadataEnum.UnderlyingType).Code)
+            var fields = metadataEnum.Fields.Where(_ => _.IsLiteral).ToArray();
+            var sortInfo = new EnumFieldInfo[fields.Length];
+
+            for (var i = 0; i < fields.Length; i++)
             {
-                case PrimitiveTypeCode.Int32:
-                {
-                    var enumFields = new List<(IMetadataField field, int value)>(metadataEnum.Fields.Count);
-                    foreach (var field in metadataEnum.Fields)
-                    {
-                        if (!field.IsLiteral) continue;
-                        enumFields.Add((field, field.DefaultValue.GetValueAsInt32()));
-                    }
-
-                    enumFields.Sort((x, y) =>
-                    {
-                        var byValue = x.value.CompareTo(y.value);
-                        return byValue != 0 ? byValue : string.Compare(x.field.Name, y.field.Name, StringComparison.Ordinal);
-                    });
-
-                    for (var i = 0; i < enumFields.Count; i++)
-                    {
-                        var (field, value) = enumFields[i];
-
-                        if (i != 0)
-                        {
-                            writer.WriteLine(',');
-                            if (field.Attributes.Count != 0) WriteLineSpacing();
-                        }
-
-                        WriteAttributes(field.Attributes, currentNamespace, newLines: true);
-                        writer.Write(field.Name);
-                        writer.Write(" = ");
-                        writer.Write(value);
-                    }
-                    writer.WriteLine();
-                    break;
-                }
+                var field = fields[i];
+                sortInfo[i] = new EnumFieldInfo(field.Name, field.DefaultValue);
             }
+
+            Array.Sort(sortInfo, fields);
+
+            for (var i = 0; i < fields.Length; i++)
+            {
+                var field = fields[i];
+
+                if (i != 0)
+                {
+                    writer.WriteLine(',');
+                    if (field.Attributes.Count != 0) WriteLineSpacing();
+                }
+
+                WriteAttributes(field.Attributes, currentNamespace, newLines: true);
+                writer.Write(field.Name);
+                writer.Write(" = ");
+                Write(field.DefaultValue);
+            }
+            writer.WriteLine();
         }
 
         private void WriteMethodModifiers(MethodModifiers modifiers, bool declaringTypeIsInterface)
@@ -1056,7 +1047,7 @@ namespace ApiContractGenerator
         {
             if (enumReferenceResolver.TryGetEnumInfo(enumType, out var info))
             {
-                foreach (var field in info.Fields)
+                foreach (var field in info.SortedFields)
                 {
                     if (Equals(field.Value, underlyingValue))
                     {

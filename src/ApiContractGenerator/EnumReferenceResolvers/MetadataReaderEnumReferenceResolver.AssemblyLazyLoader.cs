@@ -110,6 +110,7 @@ namespace ApiContractGenerator.EnumReferenceResolvers
                     return false;
                 }
 
+                fields.Sort();
                 info = new EnumInfo(HasFlagsAttribute(definition), underlyingType.Value, fields);
                 return true;
             }

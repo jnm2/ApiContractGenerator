@@ -15,7 +15,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             private readonly PEReader peReader;
             private readonly MetadataReader reader;
             private TypeDefinitionHandleCollection.Enumerator enumerator;
-            private readonly Dictionary<NameSpec, EnumInfo> cache = new Dictionary<NameSpec, EnumInfo>();
+            private readonly Dictionary<NameSpec, CachedInfo> cache = new Dictionary<NameSpec, CachedInfo>();
             private bool entirelyLoaded;
 
             public AssemblyLazyLoader(string path)
@@ -30,7 +30,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 peReader.Dispose();
             }
 
-            public bool TryGetEnumInfo(NameSpec name, out EnumInfo info)
+            public bool TryGetInfo(NameSpec name, out CachedInfo info)
             {
                 if (cache.TryGetValue(name, out info))
                     return true;
@@ -40,9 +40,20 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 while (enumerator.MoveNext())
                 {
                     var definition = reader.GetTypeDefinition(enumerator.Current);
-                    if (!TryGetEnumInfo(definition, out var currentInfo)) continue;
-
                     var currentName = GetNameSpec(definition);
+
+                    // Internals may be visible
+                    if ((definition.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedPrivate)
+                    {
+                        if (currentName == name)
+                        {
+                            info = default(CachedInfo);
+                            return false;
+                        }
+                        continue;
+                    }
+
+                    var currentInfo = GetInfo(definition);
                     cache.Add(currentName, currentInfo);
 
                     if (name == currentName)
@@ -57,26 +68,22 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 return false;
             }
 
-            private bool TryGetEnumInfo(TypeDefinition definition, out EnumInfo info)
+            private CachedInfo GetInfo(TypeDefinition definition)
             {
-                // Enums are sealed, not abstract, not interfaces
+                // Structs and enums are sealed, not abstract, not interfaces
                 if ((definition.Attributes & (TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Interface)) != TypeAttributes.Sealed)
                 {
-                    info = default(EnumInfo);
-                    return false;
+                    return default(CachedInfo);
                 }
 
-                // Internals may be visible
-                if ((definition.Attributes & TypeAttributes.VisibilityMask) == TypeAttributes.NestedPrivate)
+                if (IsSimpleNamedType(definition.BaseType, "System", "ValueType"))
                 {
-                    info = default(EnumInfo);
-                    return false;
+                    return CachedInfo.ValueType;
                 }
 
                 if (!IsSimpleNamedType(definition.BaseType, "System", "Enum"))
                 {
-                    info = default(EnumInfo);
-                    return false;
+                    return default(CachedInfo);
                 }
 
                 var fields = new List<EnumFieldInfo>();
@@ -106,13 +113,11 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
 
                 if (underlyingType == null)
                 {
-                    info = default(EnumInfo);
-                    return false;
+                    return default(CachedInfo);
                 }
 
                 fields.Sort();
-                info = new EnumInfo(HasFlagsAttribute(definition), underlyingType.Value, fields);
-                return true;
+                return CachedInfo.Enum(new EnumInfo(HasFlagsAttribute(definition), underlyingType.Value, fields));
             }
 
             private bool IsSimpleNamedType(EntityHandle type, string @namespace, string name)

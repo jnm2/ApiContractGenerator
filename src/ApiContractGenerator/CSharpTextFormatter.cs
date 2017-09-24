@@ -404,13 +404,25 @@ namespace ApiContractGenerator
             }
             else if (metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
             {
-                // May be any non-primitive non-enum reference or value type.
-                writer.Write("default");
-                if (!canTargetType)
+                if (metadataReferenceResolver.TryGetIsValueType(type, out var isValueType) && !isValueType)
                 {
-                    writer.Write('(');
-                    Write(type, currentNamespace);
-                    writer.Write(')');
+                    if (!canTargetType)
+                    {
+                        writer.Write('(');
+                        Write(type, currentNamespace);
+                        writer.Write(')');
+                    }
+                    writer.Write("null");
+                }
+                else
+                {
+                    writer.Write("default");
+                    if (!canTargetType)
+                    {
+                        writer.Write('(');
+                        Write(type, currentNamespace);
+                        writer.Write(')');
+                    }
                 }
             }
             else

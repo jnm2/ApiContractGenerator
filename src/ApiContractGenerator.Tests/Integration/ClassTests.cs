@@ -187,5 +187,45 @@ namespace ApiContractGenerator.Tests.Integration
                 "{",
                 "}"));
         }
+
+        [Test]
+        public static void Attribute_with_no_arguments()
+        {
+            Assert.That("[System.Obsolete] public class Test { private Test() { } }", HasContract(
+                "[System.Obsolete]",
+                "public class Test",
+                "{",
+                "}"));
+        }
+
+        [Test]
+        public static void Attribute_with_single_positional_argument()
+        {
+            Assert.That("[System.Obsolete(\"message\")] public class Test { private Test() { } }", HasContract(
+                "[System.Obsolete(\"message\")]",
+                "public class Test",
+                "{",
+                "}"));
+        }
+
+        [Test]
+        public static void Attribute_with_multiple_positional_arguments()
+        {
+            Assert.That("[System.Obsolete(\"message\", true)] public class Test { private Test() { } }", HasContract(
+                "[System.Obsolete(\"message\", true)]",
+                "public class Test",
+                "{",
+                "}"));
+        }
+
+        [Test]
+        public static void Attribute_with_positional_and_named_arguments()
+        {
+            Assert.That("[System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)] public class TestAttribute : System.Attribute { private TestAttribute() { } }", HasContract(
+                "[System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = true)]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "}"));
+        }
     }
 }

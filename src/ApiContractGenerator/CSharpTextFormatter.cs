@@ -162,7 +162,7 @@ namespace ApiContractGenerator
                         Write(type, currentNamespace);
                     }
 
-                    if (genericParameter.HasDefaultConstructorConstraint)
+                    if (genericParameter.HasDefaultConstructorConstraint && !genericParameter.HasNotNullableValueTypeConstraint)
                     {
                         if (!isFirst) writer.Write(", ");
                         writer.Write("new()");

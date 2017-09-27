@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using ApiContractGenerator.Internal;
 using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Model.TypeReferences;
 

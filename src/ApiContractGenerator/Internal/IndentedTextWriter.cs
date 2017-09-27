@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ApiContractGenerator
+namespace ApiContractGenerator.Internal
 {
     public sealed class IndentedTextWriter : TextWriter
     {

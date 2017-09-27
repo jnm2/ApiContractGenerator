@@ -3,6 +3,8 @@ using System.Reflection.Metadata;
 
 namespace ApiContractGenerator
 {
+    // Not in Internals namespace because it would introduce using directives.
+    // This is fine so long as the class itself is internal.
     internal static class Extensions
     {
         // See https://github.com/dotnet/corefx/issues/13295 and

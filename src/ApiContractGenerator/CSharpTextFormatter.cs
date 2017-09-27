@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
+using ApiContractGenerator.Internal;
 using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.AttributeValues;

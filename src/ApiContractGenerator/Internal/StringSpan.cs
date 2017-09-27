@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace ApiContractGenerator
+namespace ApiContractGenerator.Internal
 {
     [DebuggerDisplay("{ToString()}")]
     internal struct StringSpan

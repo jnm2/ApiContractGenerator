@@ -1,8 +1,9 @@
 using System;
 using System.IO;
+using ApiContractGenerator.Internal;
 using NUnit.Framework;
 
-namespace ApiContractGenerator.Tests
+namespace ApiContractGenerator.Tests.Internal
 {
     public static class IndentedTextWriterTests
     {

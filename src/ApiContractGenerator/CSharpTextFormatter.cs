@@ -38,10 +38,15 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataNamespace metadataNamespace)
         {
-            writer.Write("namespace ");
-            writer.WriteLine(metadataNamespace.Name);
-            writer.WriteLine('{');
-            writer.Indent();
+            var writeNamespace = !string.IsNullOrEmpty(metadataNamespace.Name);
+
+            if (writeNamespace)
+            {
+                writer.Write("namespace ");
+                writer.WriteLine(metadataNamespace.Name);
+                writer.WriteLine('{');
+                writer.Indent();
+            }
 
             var isFirst = true;
             foreach (var type in metadataNamespace.Types.OrderBy(_ => _.Name))
@@ -50,8 +55,11 @@ namespace ApiContractGenerator
                 Write(type, metadataNamespace.Name, declaringTypeNumGenericParameters: 0);
             }
 
-            writer.Unindent();
-            writer.WriteLine('}');
+            if (writeNamespace)
+            {
+                writer.Unindent();
+                writer.WriteLine('}');
+            }
         }
 
         private void WriteVisibility(MetadataVisibility visibility)

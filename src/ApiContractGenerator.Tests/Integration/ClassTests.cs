@@ -165,5 +165,27 @@ namespace ApiContractGenerator.Tests.Integration
                 "    }",
                 "}"));
         }
+
+        [TestCase("class")]
+        [TestCase("struct")]
+        [TestCase("new()")]
+        [TestCase("class, new()")]
+        [TestCase("System.IDisposable")]
+        [TestCase("class, System.IDisposable")]
+        [TestCase("struct, System.IDisposable")]
+        [TestCase("System.IDisposable, new()")]
+        [TestCase("class, System.IDisposable, new()")]
+        [TestCase("System.IDisposable, System.IEquatable<T>")]
+        [TestCase("class, System.IDisposable, System.IEquatable<T>")]
+        [TestCase("struct, System.IDisposable, System.IEquatable<T>")]
+        [TestCase("System.IDisposable, System.IEquatable<T>, new()")]
+        [TestCase("class, System.IDisposable, System.IEquatable<T>, new()")]
+        public static void Generic_constraints(string constraint)
+        {
+            Assert.That("public class Test<T> where T : " + constraint + " { private Test() { } }", HasContract(
+                "public class Test<T> where T : " + constraint,
+                "{",
+                "}"));
+        }
     }
 }

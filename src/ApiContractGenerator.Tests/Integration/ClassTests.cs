@@ -12,5 +12,11 @@ namespace ApiContractGenerator.Tests.Integration
                 "{",
                 "}"));
         }
+
+        [Test]
+        public static void Internal_class_is_not_shown()
+        {
+            Assert.That("namespace Test { internal static class Test { } }", HasContract());
+        }
     }
 }

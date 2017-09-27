@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using ApiContractGenerator.Tests.Utils;
 using NUnit.Framework.Constraints;
 
@@ -9,7 +10,17 @@ namespace ApiContractGenerator.Tests.Integration
         public static Constraint HasContract(params string[] lines)
         {
             if (lines == null) throw new ArgumentNullException(nameof(lines));
-            return new ContractConstraint(string.Join(Environment.NewLine, lines) + Environment.NewLine);
+
+            var newlineLength = Environment.NewLine.Length;
+            var bufferSize = 0;
+            foreach (var line in lines)
+                bufferSize += line.Length + newlineLength;
+
+            var expected = new StringBuilder(bufferSize);
+            foreach (var line in lines)
+                expected.AppendLine(line);
+
+            return new ContractConstraint(expected.ToString());
         }
 
         private sealed class ContractConstraint : Constraint

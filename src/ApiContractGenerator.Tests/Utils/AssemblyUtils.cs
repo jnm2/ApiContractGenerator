@@ -12,18 +12,21 @@ namespace ApiContractGenerator.Tests.Utils
 {
     public static class AssemblyUtils
     {
-        public static void EmitCompilation(string sourceCode, Stream target)
-        {
-            if (target == null) throw new ArgumentNullException(nameof(target));
-
-            var compilation = CSharpCompilation.Create(
+        // Cached for performance
+        private static readonly Lazy<CSharpCompilation> BaseCompilation = new Lazy<CSharpCompilation>(() =>
+            CSharpCompilation.Create(
                 assemblyName: $"{typeof(AssemblyUtils).FullName}.{nameof(EmitCompilation)}",
                 options: new CSharpCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary,
                     optimizationLevel: OptimizationLevel.Release,
                     allowUnsafe: true),
-                syntaxTrees: new[] { CSharpSyntaxTree.ParseText(sourceCode) },
-                references: new[] { MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location) });
+                references: new[] { MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location) }));
+
+        public static void EmitCompilation(string sourceCode, Stream target)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+
+            var compilation = BaseCompilation.Value.AddSyntaxTrees(CSharpSyntaxTree.ParseText(sourceCode));
 
             var emitResult = compilation.Emit(target);
 

@@ -52,7 +52,11 @@ namespace ApiContractGenerator.Tests.Utils
 
                     stream.Seek(0, SeekOrigin.Begin);
 
-                    using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => stream.CreateReadOnlyView(), new GacAssemblyReferenceResolver()))
+                    var assemblyResolver = new CompositeAssemblyReferenceResolver(
+                        new GacAssemblyReferenceResolver(),
+                        new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(typeof(object).GetTypeInfo().Assembly.Location)));
+
+                    using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => stream.CreateReadOnlyView(), assemblyResolver))
                     using (var source = new MetadataReaderSource(stream, metadataReferenceResolver))
                         generator.Generate(source, new CSharpTextFormatter(writer, metadataReferenceResolver));
                 }

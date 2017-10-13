@@ -13,7 +13,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 EnumInfo = enumInfo;
             }
 
-            public static readonly CachedInfo Default = default(CachedInfo);
+            public static readonly CachedInfo Default = default;
             public static readonly CachedInfo ValueType = new CachedInfo(true, null);
             public static CachedInfo Enum(EnumInfo info) => new CachedInfo(true, info);
         }

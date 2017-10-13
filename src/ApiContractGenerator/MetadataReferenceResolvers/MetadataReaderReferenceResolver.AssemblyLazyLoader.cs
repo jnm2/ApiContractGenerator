@@ -47,7 +47,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                     {
                         if (currentName == name)
                         {
-                            info = default(CachedInfo);
+                            info = default;
                             return false;
                         }
                         continue;
@@ -73,7 +73,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 // Structs and enums are sealed, not abstract, not interfaces
                 if ((definition.Attributes & (TypeAttributes.Sealed | TypeAttributes.Abstract | TypeAttributes.Interface)) != TypeAttributes.Sealed)
                 {
-                    return default(CachedInfo);
+                    return default;
                 }
 
                 if (IsSimpleNamedType(definition.BaseType, "System", "ValueType"))
@@ -83,7 +83,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
 
                 if (!IsSimpleNamedType(definition.BaseType, "System", "Enum"))
                 {
-                    return default(CachedInfo);
+                    return default;
                 }
 
                 var fields = new List<EnumFieldInfo>();
@@ -113,7 +113,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
 
                 if (underlyingType == null)
                 {
-                    return default(CachedInfo);
+                    return default;
                 }
 
                 fields.Sort();

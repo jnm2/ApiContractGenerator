@@ -31,7 +31,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 info = cachedInfo.EnumInfo.Value;
                 return true;
             }
-            info = default(EnumInfo);
+            info = default;
             return false;
         }
 
@@ -42,7 +42,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 isValueType = cachedInfo.IsValueType;
                 return true;
             }
-            isValueType = default(bool);
+            isValueType = default;
             return false;
         }
 
@@ -78,7 +78,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             if (loader == null)
             {
                 // We couldn't locate the assembly.
-                cachedInfo = default(CachedInfo);
+                cachedInfo = default;
                 return false;
             }
 

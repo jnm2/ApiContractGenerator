@@ -1,28 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Metadata;
 using ApiContractGenerator.Model;
+using ApiContractGenerator.Model.AttributeValues;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator
 {
     partial class CSharpTextFormatter
     {
-        private sealed class AttributeSearch
+        public abstract class AttributeSearch
         {
-            private readonly string name;
-
-            public IMetadataAttribute Result { get; private set; }
-
-            private AttributeSearch(string name)
-            {
-                this.name = name;
-            }
-
-            public static AttributeSearch ExtensionAttribute() => new AttributeSearch("ExtensionAttribute");
-
-            public static bool operator true(AttributeSearch search) => search.Result != null;
-            public static bool operator false(AttributeSearch search) => search.Result == null;
-
+            protected abstract bool TryMatch(string @namespace, string name, IMetadataAttribute attribute);
 
             public static IReadOnlyList<IMetadataAttribute> Extract(IReadOnlyList<IMetadataAttribute> attributes, params AttributeSearch[] searches)
             {
@@ -35,16 +25,14 @@ namespace ApiContractGenerator
                 for (var i = attributes.Count - 1; i >= 0; i--)
                 {
                     var attribute = attributes[i];
-                    if (!(attribute.AttributeType is TopLevelTypeReference topLevel
-                          && topLevel.Namespace == "System.Runtime.CompilerServices")) continue;
+                    if (!(attribute.AttributeType is TopLevelTypeReference topLevel)) continue;
 
                     var matched = false;
 
                     foreach (var search in searches)
                     {
-                        if (search.name == topLevel.Name)
+                        if (search.TryMatch(topLevel.Namespace, topLevel.Name, attribute))
                         {
-                            search.Result = attribute;
                             matched = true;
                             break;
                         }
@@ -58,6 +46,63 @@ namespace ApiContractGenerator
                 }
 
                 return leftOver ?? attributes;
+            }
+
+
+            public static AttributeSearch<bool> ExtensionAttribute() => new ExtensionAttributeSearch();
+
+            private sealed class ExtensionAttributeSearch : AttributeSearch<bool>
+            {
+                public ExtensionAttributeSearch() : base("System.Runtime.CompilerServices", "ExtensionAttribute")
+                {
+                }
+
+                protected override bool TryMatch(IMetadataAttribute attribute, out bool result) => result = true;
+            }
+
+
+            public static AttributeSearch<string> DefaultMemberAttribute() => new DefaultMemberAttributeSearch();
+
+            private sealed class DefaultMemberAttributeSearch : AttributeSearch<string>
+            {
+                public DefaultMemberAttributeSearch() : base("System.Reflection", "DefaultMemberAttribute")
+                {
+                }
+
+                protected override bool TryMatch(IMetadataAttribute attribute, out string result)
+                {
+                    if (attribute.FixedArguments.FirstOrDefault() is ConstantAttributeValue constant
+                        && constant.Value.TypeCode == ConstantTypeCode.String)
+                    {
+                        result = constant.Value.GetValueAsString();
+                        return true;
+                    }
+                    result = default;
+                    return false;
+                }
+            }
+        }
+
+        public abstract class AttributeSearch<T> : AttributeSearch
+        {
+            private readonly string @namespace;
+            private readonly string name;
+
+            public T Result { get; private set; }
+
+            protected AttributeSearch(string @namespace, string name)
+            {
+                this.@namespace = @namespace;
+                this.name = name;
+            }
+
+            protected abstract bool TryMatch(IMetadataAttribute attribute, out T result);
+
+            protected sealed override bool TryMatch(string @namespace, string name, IMetadataAttribute attribute)
+            {
+                if (@namespace != this.@namespace || name != this.name || !TryMatch(attribute, out var result)) return false;
+                Result = result;
+                return true;
             }
         }
     }

@@ -80,5 +80,15 @@ namespace ApiContractGenerator.Tests.Integration
                 "    public static System.Collections.Generic.IEnumerable<int> Property { get; }",
                 "}"));
         }
+
+        [Test]
+        public static void AsyncStateMachineAttribute()
+        {
+            Assert.That("public static class Class { public static async void Method() { } }", HasContract(
+                "public static class Class",
+                "{",
+                "    public static void Method();",
+                "}"));
+        }
     }
 }

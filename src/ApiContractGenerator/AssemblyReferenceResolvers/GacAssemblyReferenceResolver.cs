@@ -7,17 +7,27 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
     public sealed class GacAssemblyReferenceResolver : IAssemblyReferenceResolver
     {
         private IAssemblyCache globalAssemblyCache;
+        private bool fusionNotAvailable;
 
         public bool TryGetAssemblyPath(AssemblyName assemblyName, out string path)
         {
-            if (assemblyName?.Version == null || assemblyName.GetPublicKeyToken() == null)
+            if (fusionNotAvailable || assemblyName?.Version == null || assemblyName.GetPublicKeyToken() == null)
             {
                 path = null;
                 return false;
             }
 
-            if (TryLocate(assemblyName.FullName, out path))
-                return true;
+            try
+            {
+                if (TryLocate(assemblyName.FullName, out path))
+                    return true;
+            }
+            catch (DllNotFoundException)
+            {
+                fusionNotAvailable = true;
+                path = null;
+                return false;
+            }
 
             // Ran into this
             if (assemblyName.CultureName == string.Empty)

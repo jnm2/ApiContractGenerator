@@ -1224,31 +1224,31 @@ namespace ApiContractGenerator
             switch (value.TypeCode)
             {
                 case ConstantTypeCode.Boolean:
-                    return value.GetValueAsBoolean() == default(bool);
+                    return value.GetValueAsBoolean() == default;
                 case ConstantTypeCode.Char:
-                    return value.GetValueAsChar() == default(char);
+                    return value.GetValueAsChar() == default;
                 case ConstantTypeCode.SByte:
-                    return value.GetValueAsSByte() == default(sbyte);
+                    return value.GetValueAsSByte() == default;
                 case ConstantTypeCode.Byte:
-                    return value.GetValueAsByte() == default(byte);
+                    return value.GetValueAsByte() == default;
                 case ConstantTypeCode.Int16:
-                    return value.GetValueAsInt16() == default(short);
+                    return value.GetValueAsInt16() == default;
                 case ConstantTypeCode.UInt16:
-                    return value.GetValueAsInt16() == default(ushort);
+                    return value.GetValueAsInt16() == default;
                 case ConstantTypeCode.Int32:
-                    return value.GetValueAsInt32() == default(int);
+                    return value.GetValueAsInt32() == default;
                 case ConstantTypeCode.UInt32:
-                    return value.GetValueAsUInt32() == default(uint);
+                    return value.GetValueAsUInt32() == default;
                 case ConstantTypeCode.Int64:
-                    return value.GetValueAsInt64() == default(long);
+                    return value.GetValueAsInt64() == default;
                 case ConstantTypeCode.UInt64:
-                    return value.GetValueAsUInt64() == default(ulong);
+                    return value.GetValueAsUInt64() == default;
                 case ConstantTypeCode.Single:
-                    return value.GetValueAsSingle() == default(float);
+                    return value.GetValueAsSingle() == default;
                 case ConstantTypeCode.Double:
-                    return value.GetValueAsDouble() == default(double);
+                    return value.GetValueAsDouble() == default;
                 case ConstantTypeCode.String:
-                    return value.GetValueAsString() == default(string);
+                    return value.GetValueAsString() == default;
                 default:
                     return false;
             }

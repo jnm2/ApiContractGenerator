@@ -33,5 +33,32 @@ namespace ApiContractGenerator.Tests.Integration
                 "    public int this[int x] { get; }",
                 "}"));
         }
+
+        [Test]
+        public static void ParamArrayAttribute_on_method()
+        {
+            Assert.That("public static class Class { public static void Method(params object[] p) { } }", HasContract(
+                "public static class Class",
+                "{",
+                "    public static void Method(params object[] p);",
+                "}"));
+        }
+
+        [Test]
+        public static void ParamArrayAttribute_on_property()
+        {
+            Assert.That("public class Class { public int this[params object[] p] => 0; private Class() { } }", HasContract(
+                "public class Class",
+                "{",
+                "    public int this[params object[] p] { get; }",
+                "}"));
+        }
+
+        [Test]
+        public static void ParamArrayAttribute_on_delegate()
+        {
+            Assert.That("public delegate void Method(params object[] p);", HasContract(
+                "public delegate void Method(params object[] p);"));
+        }
     }
 }

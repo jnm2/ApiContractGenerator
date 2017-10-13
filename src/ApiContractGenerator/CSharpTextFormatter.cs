@@ -666,9 +666,12 @@ namespace ApiContractGenerator
                 if (i != 0) writer.Write(", ");
 
                 var metadataParameter = parameters[i];
-                WriteAttributes(metadataParameter.Attributes, currentNamespace, newLines: false);
+
+                var paramArrayAttribute = AttributeSearch.ParamArrayAttribute();
+                WriteAttributes(AttributeSearch.Extract(metadataParameter.Attributes, paramArrayAttribute), currentNamespace, newLines: false);
 
                 if (i == 0 && isExtensionMethod) writer.Write("this ");
+                if (paramArrayAttribute.Result) writer.Write("params ");
 
                 if (metadataParameter.IsOut)
                 {

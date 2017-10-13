@@ -81,6 +81,18 @@ namespace ApiContractGenerator
                     return false;
                 }
             }
+
+
+            public static AttributeSearch<bool> ParamArrayAttribute() => new ParamArrayAttributeSearch();
+
+            private sealed class ParamArrayAttributeSearch : AttributeSearch<bool>
+            {
+                public ParamArrayAttributeSearch() : base("System", "ParamArrayAttribute")
+                {
+                }
+
+                protected override bool TryMatch(IMetadataAttribute attribute, out bool result) => result = true;
+            }
         }
 
         public abstract class AttributeSearch<T> : AttributeSearch

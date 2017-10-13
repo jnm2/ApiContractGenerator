@@ -11,16 +11,16 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
 {
     public sealed partial class MetadataReaderReferenceResolver : IMetadataReferenceResolver, IDisposable
     {
-        private readonly string currentAssemblyPath;
+        private readonly Func<Stream> currentAssemblyStreamFactory;
         private AssemblyLazyLoader currentAssemblyLoader;
         private AssemblyName currentAssemblyMscorlibReference;
         private readonly IAssemblyReferenceResolver assemblyResolver;
 
         private readonly Dictionary<string, AssemblyLazyLoader> assemblyLoadersByFullName = new Dictionary<string, AssemblyLazyLoader>();
 
-        public MetadataReaderReferenceResolver(string currentAssemblyPath, IAssemblyReferenceResolver assemblyResolver)
+        public MetadataReaderReferenceResolver(Func<Stream> currentAssemblyStreamFactory, IAssemblyReferenceResolver assemblyResolver)
         {
-            this.currentAssemblyPath = currentAssemblyPath ?? throw new ArgumentNullException(nameof(currentAssemblyPath));
+            this.currentAssemblyStreamFactory = currentAssemblyStreamFactory ?? throw new ArgumentNullException(nameof(currentAssemblyStreamFactory));
             this.assemblyResolver = assemblyResolver ?? throw new ArgumentNullException(nameof(assemblyResolver));
         }
 
@@ -53,7 +53,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             if (assemblyName == null)
             {
                 if (currentAssemblyLoader == null)
-                    currentAssemblyLoader = new AssemblyLazyLoader(currentAssemblyPath);
+                    currentAssemblyLoader = new AssemblyLazyLoader(currentAssemblyStreamFactory.Invoke());
 
                 if (currentAssemblyLoader.TryGetInfo(typeName, out cachedInfo))
                     return true;
@@ -63,7 +63,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 // but this is just in case.
 
                 if (currentAssemblyMscorlibReference == null)
-                    currentAssemblyMscorlibReference = GetMscorlibReference(currentAssemblyPath);
+                    currentAssemblyMscorlibReference = GetMscorlibReference(currentAssemblyStreamFactory.Invoke());
 
                 assemblyName = currentAssemblyMscorlibReference;
             }
@@ -71,7 +71,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             var fullName = assemblyName.FullName;
             if (!assemblyLoadersByFullName.TryGetValue(fullName, out var loader))
             {
-                loader = assemblyResolver.TryGetAssemblyPath(assemblyName, out var path) ? new AssemblyLazyLoader(path) : null;
+                loader = assemblyResolver.TryGetAssemblyPath(assemblyName, out var path) ? new AssemblyLazyLoader(File.OpenRead(path)) : null;
                 assemblyLoadersByFullName.Add(fullName, loader);
             }
 
@@ -85,9 +85,9 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             return loader.TryGetInfo(typeName, out cachedInfo);
         }
 
-        private static AssemblyName GetMscorlibReference(string assemblyPath)
+        private static AssemblyName GetMscorlibReference(Stream assemblyStream)
         {
-            using (var peReader = new PEReader(File.OpenRead(assemblyPath)))
+            using (var peReader = new PEReader(assemblyStream))
             {
                 var reader = peReader.GetMetadataReader();
 

@@ -36,11 +36,15 @@ namespace ApiContractGenerator
                     if (isFirst) isFirst = false; else regexBuilder.Append('|');
                     regexBuilder.Append(Regex.Escape(ignoredNamespace));
                 }
-                this.ignoredNamespaces = new Regex(regexBuilder.Append(@")(\Z|\.)").ToString(), RegexOptions.IgnoreCase);
+
+                this.ignoredNamespaces = isFirst ? null : new Regex(regexBuilder.Append(@")(\Z|\.)").ToString(), RegexOptions.IgnoreCase);
             }
 
-            public IReadOnlyList<IMetadataNamespace> Namespaces =>
-                source.Namespaces.Where(ns => !ignoredNamespaces.IsMatch(ns.Name)).ToList();
+            public IReadOnlyList<IMetadataNamespace> Namespaces
+            {
+                get => ignoredNamespaces == null ? source.Namespaces :
+                    source.Namespaces.Where(ns => !ignoredNamespaces.IsMatch(ns.Name)).ToList();
+            }
         }
     }
 }

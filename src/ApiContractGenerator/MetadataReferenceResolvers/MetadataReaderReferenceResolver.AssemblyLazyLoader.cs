@@ -18,9 +18,9 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             private readonly Dictionary<NameSpec, CachedInfo> cache = new Dictionary<NameSpec, CachedInfo>();
             private bool entirelyLoaded;
 
-            public AssemblyLazyLoader(string path)
+            public AssemblyLazyLoader(Stream stream)
             {
-                peReader = new PEReader(File.OpenRead(path));
+                peReader = new PEReader(stream);
                 reader = peReader.GetMetadataReader();
                 enumerator = reader.TypeDefinitions.GetEnumerator();
             }

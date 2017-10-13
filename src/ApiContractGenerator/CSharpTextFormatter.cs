@@ -580,14 +580,14 @@ namespace ApiContractGenerator
 
                 if (metadataProperty.GetAccessor != null)
                 {
-                    WriteParameters(metadataProperty.GetAccessor.Parameters, currentNamespace);
+                    WriteParameters(metadataProperty.GetAccessor.Parameters, false, currentNamespace);
                 }
                 else
                 {
                     var indexParameter = new IMetadataParameter[metadataProperty.SetAccessor.Parameters.Count - 1];
                     for (var i = 0; i < indexParameter.Length; i++)
                         indexParameter[i] = metadataProperty.SetAccessor.Parameters[i];
-                    WriteParameters(indexParameter, currentNamespace);
+                    WriteParameters(indexParameter, false, currentNamespace);
                 }
 
                 writer.Write(']');
@@ -659,7 +659,7 @@ namespace ApiContractGenerator
             }
         }
 
-        private void WriteParameters(IReadOnlyList<IMetadataParameter> parameters, string currentNamespace)
+        private void WriteParameters(IReadOnlyList<IMetadataParameter> parameters, bool isExtensionMethod, string currentNamespace)
         {
             for (var i = 0; i < parameters.Count; i++)
             {
@@ -667,6 +667,8 @@ namespace ApiContractGenerator
 
                 var metadataParameter = parameters[i];
                 WriteAttributes(metadataParameter.Attributes, currentNamespace, newLines: false);
+
+                if (i == 0 && isExtensionMethod) writer.Write("this ");
 
                 if (metadataParameter.IsOut)
                 {
@@ -726,7 +728,9 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataMethod metadataMethod, IMetadataType declaringType, string currentNamespace)
         {
-            WriteAttributes(metadataMethod.Attributes, currentNamespace, newLines: true);
+            var extensionAttribute = AttributeSearch.ExtensionAttribute();
+
+            WriteAttributes(AttributeSearch.Extract(metadataMethod.Attributes, extensionAttribute), currentNamespace, newLines: true);
             WriteMethodModifiers(MethodModifiers.FromMethod(metadataMethod), declaringType is IMetadataInterface);
 
             if (metadataMethod.Name == ".ctor")
@@ -755,7 +759,7 @@ namespace ApiContractGenerator
 
             WriteGenericSignature(metadataMethod.GenericTypeParameters, currentNamespace, numToSkip: 0);
             writer.Write('(');
-            WriteParameters(metadataMethod.Parameters, currentNamespace);
+            WriteParameters(metadataMethod.Parameters, extensionAttribute.Result != null, currentNamespace);
             writer.Write(')');
             WriteGenericConstraints(metadataMethod.GenericTypeParameters, currentNamespace);
             writer.WriteLine(';');
@@ -904,7 +908,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataClass metadataClass, string currentNamespace, int declaringTypeNumGenericParameters)
         {
-            WriteAttributes(metadataClass.Attributes, currentNamespace, newLines: true);
+            WriteAttributes(AttributeSearch.Extract(metadataClass.Attributes, AttributeSearch.ExtensionAttribute()), currentNamespace, newLines: true);
             WriteVisibility(metadataClass.Visibility);
 
             if (metadataClass.IsStatic)
@@ -964,7 +968,7 @@ namespace ApiContractGenerator
             writer.Write(' ');
             WriteTypeNameAndGenericSignature(metadataDelegate, currentNamespace, declaringTypeNumGenericParameters);
             writer.Write('(');
-            WriteParameters(metadataDelegate.Parameters, currentNamespace);
+            WriteParameters(metadataDelegate.Parameters, false, currentNamespace);
             writer.WriteLine(");");
         }
 

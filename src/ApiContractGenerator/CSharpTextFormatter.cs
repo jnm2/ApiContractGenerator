@@ -733,7 +733,7 @@ namespace ApiContractGenerator
         {
             var extensionAttribute = AttributeSearch.ExtensionAttribute();
 
-            WriteAttributes(AttributeSearch.Extract(metadataMethod.Attributes, extensionAttribute), currentNamespace, newLines: true);
+            WriteAttributes(AttributeSearch.Extract(metadataMethod.Attributes, extensionAttribute, AttributeSearch.IteratorStateMachineAttribute()), currentNamespace, newLines: true);
             WriteMethodModifiers(MethodModifiers.FromMethod(metadataMethod), declaringType is IMetadataInterface);
 
             if (metadataMethod.Name == ".ctor")

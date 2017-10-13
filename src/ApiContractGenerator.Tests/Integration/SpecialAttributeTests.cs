@@ -60,5 +60,35 @@ namespace ApiContractGenerator.Tests.Integration
             Assert.That("public delegate void Method(params object[] p);", HasContract(
                 "public delegate void Method(params object[] p);"));
         }
+
+        [Test]
+        public static void IteratorStateMachineAttribute_on_method()
+        {
+            Assert.That("public static class Class { public static System.Collections.Generic.IEnumerable<int> Method() { yield break; } }", HasContract(
+                "public static class Class",
+                "{",
+                "    public static System.Collections.Generic.IEnumerable<int> Method();",
+                "}"));
+        }
+
+        [Test]
+        public static void IteratorStateMachineAttribute_on_property()
+        {
+            Assert.That("public static class Class { public static System.Collections.Generic.IEnumerable<int> Property { get { yield break; } } }", HasContract(
+                "public static class Class",
+                "{",
+                "    public static System.Collections.Generic.IEnumerable<int> Property { get; }",
+                "}"));
+        }
+
+        [Test]
+        public static void AsyncStateMachineAttribute()
+        {
+            Assert.That("public static class Class { public static async void Method() { } }", HasContract(
+                "public static class Class",
+                "{",
+                "    public static void Method();",
+                "}"));
+        }
     }
 }

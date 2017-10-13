@@ -49,11 +49,17 @@ namespace ApiContractGenerator
             }
 
 
-            public static AttributeSearch<bool> ExtensionAttribute() => new ExtensionAttributeSearch();
+            public static AttributeSearch<bool> ExtensionAttribute() => new SimpleAttributeSearch("System.Runtime.CompilerServices", "ExtensionAttribute");
 
-            private sealed class ExtensionAttributeSearch : AttributeSearch<bool>
+            public static AttributeSearch<bool> ParamArrayAttribute() => new SimpleAttributeSearch("System", "ParamArrayAttribute");
+
+            public static AttributeSearch<bool> IteratorStateMachineAttribute() => new SimpleAttributeSearch("System.Runtime.CompilerServices", "IteratorStateMachineAttribute");
+
+            public static AttributeSearch<bool> AsyncStateMachineAttribute() => new SimpleAttributeSearch("System.Runtime.CompilerServices", "AsyncStateMachineAttribute");
+
+            private sealed class SimpleAttributeSearch : AttributeSearch<bool>
             {
-                public ExtensionAttributeSearch() : base("System.Runtime.CompilerServices", "ExtensionAttribute")
+                public SimpleAttributeSearch(string @namespace, string name) : base(@namespace, name)
                 {
                 }
 
@@ -80,18 +86,6 @@ namespace ApiContractGenerator
                     result = default;
                     return false;
                 }
-            }
-
-
-            public static AttributeSearch<bool> ParamArrayAttribute() => new ParamArrayAttributeSearch();
-
-            private sealed class ParamArrayAttributeSearch : AttributeSearch<bool>
-            {
-                public ParamArrayAttributeSearch() : base("System", "ParamArrayAttribute")
-                {
-                }
-
-                protected override bool TryMatch(IMetadataAttribute attribute, out bool result) => result = true;
             }
         }
 

@@ -411,7 +411,7 @@ namespace ApiContractGenerator
             {
                 WriteConstantPrimitive(metadataConstantValue);
             }
-            else if (metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
+            else if (metadataConstantValue == null || metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
             {
                 if (metadataReferenceResolver.TryGetIsValueType(type, out var isValueType) && !isValueType)
                 {

@@ -26,7 +26,7 @@ namespace ApiContractGenerator.Tests.Utils
         {
             if (target == null) throw new ArgumentNullException(nameof(target));
 
-            var compilation = BaseCompilation.Value.AddSyntaxTrees(CSharpSyntaxTree.ParseText(sourceCode));
+            var compilation = BaseCompilation.Value.AddSyntaxTrees(CSharpSyntaxTree.ParseText(sourceCode, new CSharpParseOptions(LanguageVersion.Latest)));
 
             var emitResult = compilation.Emit(target);
 

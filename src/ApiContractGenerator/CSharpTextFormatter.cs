@@ -431,7 +431,7 @@ namespace ApiContractGenerator
             }
             else if (metadataConstantValue == null || metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
             {
-                if (metadataReferenceResolver.TryGetIsValueType(type, out var isValueType) && !isValueType)
+                if (IsNullLiteralAllowed(type))
                 {
                     if (!canTargetType)
                     {
@@ -455,6 +455,40 @@ namespace ApiContractGenerator
             else
             {
                 WriteEnumReferenceValue(type, metadataConstantValue, currentNamespace, canTargetType);
+            }
+        }
+
+        private bool IsNullLiteralAllowed(MetadataTypeReference type)
+        {
+            switch (type)
+            {
+                case PrimitiveTypeReference primitive:
+                    switch (primitive.Code)
+                    {
+                        case PrimitiveTypeCode.Object:
+                            case PrimitiveTypeCode.String:
+                            return true;
+                        default:
+                            return false;
+                    }
+
+                case GenericInstantiationTypeReference genericInstantiation:
+                    return IsNullLiteralAllowed(genericInstantiation.TypeDefinition);
+
+                case TopLevelTypeReference topLevel when topLevel.Name == "Nullable`1" && topLevel.Namespace == "System":
+                    return true;
+
+                case GenericParameterTypeReference genericParameterReference:
+                    if (genericParameterReference.TypeParameter.HasNotNullableValueTypeConstraint) return false;
+                    if (genericParameterReference.TypeParameter.HasReferenceTypeConstraint) return true;
+
+                    foreach (var typeConstraint in genericParameterReference.TypeParameter.TypeConstraints)
+                        if (IsNullLiteralAllowed(typeConstraint)) return true;
+
+                    return false;
+
+                default:
+                    return metadataReferenceResolver.TryGetIsValueType(type, out var isValueType) && !isValueType;
             }
         }
 
@@ -1498,7 +1532,7 @@ namespace ApiContractGenerator
 
             public ImmutableNode<string> Accept(GenericParameterTypeReference genericParameterTypeReference)
             {
-                return new ImmutableNode<string>(null, genericParameterTypeReference.Name, null);
+                return new ImmutableNode<string>(null, genericParameterTypeReference.TypeParameter.Name, null);
             }
 
             public ImmutableNode<string> Visit(GenericInstantiationTypeReference genericInstantiationTypeReference)

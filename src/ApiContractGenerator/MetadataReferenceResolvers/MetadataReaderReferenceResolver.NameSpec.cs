@@ -23,19 +23,19 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 this.nestedNames = nestedNames != null && nestedNames.Length != 0 ? nestedNames : null;
             }
 
-            public static (AssemblyName assemblyName, NameSpec typeName) FromMetadataTypeReference(MetadataTypeReference enumTypeReference)
+            public static (AssemblyName assemblyName, NameSpec typeName) FromMetadataTypeReference(MetadataTypeReference typeReference)
             {
                 var nestedNames = (List<string>)null;
 
-                for (; enumTypeReference is NestedTypeReference nested; enumTypeReference = nested.DeclaringType)
+                for (; typeReference is NestedTypeReference nested; typeReference = nested.DeclaringType)
                 {
                     if (nestedNames == null) nestedNames = new List<string>();
                     nestedNames.Add(nested.Name);
                 }
                 nestedNames?.Reverse();
 
-                if (!(enumTypeReference is TopLevelTypeReference topLevel))
-                    throw new ArgumentException($"Type reference must either be a {nameof(TopLevelTypeReference)} or a {nameof(NestedTypeReference)}.", nameof(enumTypeReference));
+                if (!(typeReference is TopLevelTypeReference topLevel))
+                    throw new ArgumentException($"Type reference must either be a {nameof(TopLevelTypeReference)} or a {nameof(NestedTypeReference)}.", nameof(typeReference));
 
                 return (
                     topLevel.Assembly,

@@ -2,12 +2,12 @@ namespace ApiContractGenerator.Model.TypeReferences
 {
     public sealed class GenericParameterTypeReference : MetadataTypeReference
     {
-        public GenericParameterTypeReference(string name)
+        public GenericParameterTypeReference(IMetadataGenericTypeParameter typeParameter)
         {
-            Name = name;
+            TypeParameter = typeParameter;
         }
 
-        public string Name { get; }
+        public IMetadataGenericTypeParameter TypeParameter { get; }
 
         public override T Accept<T>(IMetadataTypeReferenceVisitor<T> visitor) => visitor.Accept(this);
     }

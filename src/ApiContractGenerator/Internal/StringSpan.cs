@@ -38,12 +38,14 @@ namespace ApiContractGenerator.Internal
 
         public int IndexOf(char value)
         {
-            return this.value.IndexOf(value, start, length);
+            var r = this.value.IndexOf(value, start, length);
+            return r == -1 ? -1 : r - start;
         }
 
         public int LastIndexOf(char value)
         {
-            return this.value.LastIndexOf(value, start + length - 1, length);
+            var r = this.value.LastIndexOf(value, start + length - 1, length);
+            return r == -1 ? -1 : r - start;
         }
     }
 

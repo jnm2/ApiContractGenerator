@@ -25,6 +25,9 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
 
             public static (AssemblyName assemblyName, NameSpec typeName) FromMetadataTypeReference(MetadataTypeReference typeReference)
             {
+                if (typeReference is GenericInstantiationTypeReference genericInstantiation)
+                    typeReference = genericInstantiation.TypeDefinition;
+
                 var nestedNames = (List<string>)null;
 
                 for (; typeReference is NestedTypeReference nested; typeReference = nested.DeclaringType)

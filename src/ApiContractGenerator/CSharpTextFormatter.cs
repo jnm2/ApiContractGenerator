@@ -413,6 +413,7 @@ namespace ApiContractGenerator
                 {
                     case PrimitiveTypeCode.IntPtr:
                     case PrimitiveTypeCode.UIntPtr:
+                    case PrimitiveTypeCode.TypedReference:
                         if (metadataConstantValue == null || metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
                         {
                             writer.Write("default");
@@ -420,8 +421,10 @@ namespace ApiContractGenerator
                         }
                         else
                         {
-                            writer.Write("(IntPtr)");
-                            break; // It's going to be invalid C# but it'll be transparent 
+                            writer.Write("(System.");
+                            writer.Write(primitive.Code);
+                            writer.Write(')');
+                            break; // It's going to be invalid C# but it'll be transparent
                         }
                 }
                 WriteConstantPrimitive(metadataConstantValue);

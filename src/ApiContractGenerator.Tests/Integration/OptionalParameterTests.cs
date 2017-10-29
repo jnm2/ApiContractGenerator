@@ -25,6 +25,7 @@ namespace ApiContractGenerator.Tests.Integration
         [TestCase("System.DateTime x = default")]
         [TestCase("System.Exception x = null")]
         [TestCase("System.Action x = null")]
+        [TestCase("System.TypedReference x = default")]
         public static void Default_value_is_type_default(string parameterDefinition)
         {
             Assert.That("public interface ITest { void Method(" + parameterDefinition + "); }", HasContract(

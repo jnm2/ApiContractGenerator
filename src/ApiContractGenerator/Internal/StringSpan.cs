@@ -31,7 +31,7 @@ namespace ApiContractGenerator.Internal
             return new StringSpan(value, this.start + start, length);
         }
 
-        public static implicit operator StringSpan(string value) => new StringSpan(value, 0, value.Length);
+        public static implicit operator StringSpan(string value) => new StringSpan(value, 0, value?.Length ?? 0);
 
         public static explicit operator string(StringSpan value) => value.ToString();
 
@@ -54,6 +54,15 @@ namespace ApiContractGenerator.Internal
             if (sourceIndex < 0 || sourceIndex > Length) throw new ArgumentOutOfRangeException(nameof(sourceIndex), sourceIndex, "Source index must be greater than or equal to zero and less than or equal to the current length.");
             if (count < 0 || sourceIndex + count > Length) throw new ArgumentOutOfRangeException(nameof(count), count, "Count must be greater than or equal to zero and less than or equal to the current length minus the source index.");
             value.CopyTo(start + sourceIndex, destination, destinationIndex, count);
+        }
+
+        public char this[int index]
+        {
+            get
+            {
+                if (index < 0 || index >= Length) throw new ArgumentOutOfRangeException(nameof(index), index, "Index must be greater than or equal to zero and less than the current length.");
+                return value[index + start];
+            }
         }
     }
 

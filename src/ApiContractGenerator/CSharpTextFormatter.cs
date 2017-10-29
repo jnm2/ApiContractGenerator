@@ -407,8 +407,23 @@ namespace ApiContractGenerator
         /// </summary>
         private void WriteConstant(MetadataTypeReference type, IMetadataConstantValue metadataConstantValue, string currentNamespace, bool canTargetType)
         {
-            if (type is PrimitiveTypeReference)
+            if (type is PrimitiveTypeReference primitive)
             {
+                switch (primitive.Code)
+                {
+                    case PrimitiveTypeCode.IntPtr:
+                    case PrimitiveTypeCode.UIntPtr:
+                        if (metadataConstantValue == null || metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
+                        {
+                            writer.Write("default");
+                            return;
+                        }
+                        else
+                        {
+                            writer.Write("(IntPtr)");
+                            break; // It's going to be invalid C# but it'll be transparent 
+                        }
+                }
                 WriteConstantPrimitive(metadataConstantValue);
             }
             else if (metadataConstantValue == null || metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)

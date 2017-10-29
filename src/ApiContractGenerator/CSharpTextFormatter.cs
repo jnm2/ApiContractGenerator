@@ -407,6 +407,17 @@ namespace ApiContractGenerator
         /// </summary>
         private void WriteConstant(MetadataTypeReference type, IMetadataConstantValue metadataConstantValue, string currentNamespace, bool canTargetType)
         {
+            var isNullable = false;
+
+            if (type is GenericInstantiationTypeReference genericInstantiation
+                && genericInstantiation.TypeDefinition is TopLevelTypeReference genericInstantiationTopLevel
+                && genericInstantiationTopLevel.Name == "Nullable`1"
+                && genericInstantiationTopLevel.Namespace == "System")
+            {
+                type = genericInstantiation.GenericTypeArguments[0];
+                isNullable = true;
+            }
+
             if (type is PrimitiveTypeReference primitive)
             {
                 switch (primitive.Code)
@@ -416,7 +427,7 @@ namespace ApiContractGenerator
                     case PrimitiveTypeCode.TypedReference:
                         if (metadataConstantValue == null || metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
                         {
-                            writer.Write("default");
+                            writer.Write(isNullable ? "null" : "default");
                             return;
                         }
                         else
@@ -431,7 +442,7 @@ namespace ApiContractGenerator
             }
             else if (metadataConstantValue == null || metadataConstantValue.TypeCode == ConstantTypeCode.NullReference)
             {
-                if (IsNullLiteralAllowed(type))
+                if (isNullable || IsNullLiteralAllowed(type))
                 {
                     if (!canTargetType)
                     {

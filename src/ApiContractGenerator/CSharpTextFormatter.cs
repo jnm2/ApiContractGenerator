@@ -901,7 +901,7 @@ namespace ApiContractGenerator
 
             if (metadataMethod.Name == ".ctor")
             {
-                writer.Write(TrimGenericArity(declaringType.Name));
+                writer.Write(ParseGenericArity(declaringType.Name).name);
             }
             else
             {
@@ -1539,10 +1539,10 @@ namespace ApiContractGenerator
             }
         }
 
-        private static string TrimGenericArity(string typeName)
+        private static (string name, int arity) ParseGenericArity(string typeName)
         {
             var index = typeName.LastIndexOf('`');
-            return index == -1 ? typeName : typeName.Substring(0, index);
+            return index == -1 ? (typeName, 0) : (typeName.Substring(0, index), int.Parse(typeName.Substring(index + 1)));
         }
     }
 }

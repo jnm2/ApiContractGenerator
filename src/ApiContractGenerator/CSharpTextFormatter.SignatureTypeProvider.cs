@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator
@@ -72,11 +73,33 @@ namespace ApiContractGenerator
                 return new ImmutableNode<string>(array.ElementType.Accept(this), ArraySuffixesByDimension[array.Dimensions], null);
             }
 
+            private static readonly ImmutableNode<string> GenericParameterListEnd = new ImmutableNode<string>(null, ">", null);
+
+            private static ImmutableNode<string> BuildNameWithArity(string rawName)
+            {
+                var (name, arity) = ParseGenericArity(rawName);
+
+                var arityBuilder = (ImmutableNode<string>)null;
+                if (arity != 0)
+                {
+                    arityBuilder = GenericParameterListEnd;
+                    for (var i = 1; i < arity; i++)
+                        arityBuilder = new ImmutableNode<string>(null, ",", arityBuilder);
+                    arityBuilder = new ImmutableNode<string>(null, "<", arityBuilder);
+                }
+
+                return new ImmutableNode<string>(null, name, arityBuilder);
+            }
+
             public ImmutableNode<string> Visit(TopLevelTypeReference topLevelTypeReference)
             {
-                var nameNode = new ImmutableNode<string>(null, TrimGenericArity(topLevelTypeReference.Name), null);
-                return currentNamespace == topLevelTypeReference.Namespace || string.IsNullOrEmpty(topLevelTypeReference.Namespace) ? nameNode :
-                    new ImmutableNode<string>(new ImmutableNode<string>(null, topLevelTypeReference.Namespace, null), ".", nameNode);
+                return AddNamespace(topLevelTypeReference, BuildNameWithArity(topLevelTypeReference.Name));
+            }
+
+            private ImmutableNode<string> AddNamespace(TopLevelTypeReference topLevelTypeReference, ImmutableNode<string> name)
+            {
+                return currentNamespace == topLevelTypeReference.Namespace || string.IsNullOrEmpty(topLevelTypeReference.Namespace) ? name :
+                    new ImmutableNode<string>(new ImmutableNode<string>(null, topLevelTypeReference.Namespace, null), ".", name);
             }
 
             public ImmutableNode<string> Accept(GenericParameterTypeReference genericParameterTypeReference)
@@ -100,14 +123,45 @@ namespace ApiContractGenerator
                     return tupleSyntax;
                 }
 
-                var current = new ImmutableNode<string>(args[args.Count - 1].Accept(this), ">", null);
+                var builder = (ImmutableNode<string>)null;
+                var argumentsLeft = genericInstantiationTypeReference.GenericTypeArguments.Count;
 
-                for (var i = args.Count - 2; i >= 0; i--)
+                void BuildNext(string typeName)
                 {
-                    current = new ImmutableNode<string>(args[i].Accept(this), ", ", current);
+                    var (name, arity) = ParseGenericArity(typeName);
+                    if (arity != 0)
+                    {
+                        if (argumentsLeft < arity) throw new InvalidOperationException("Number of generic arguments provided does not match combined type arity.");
+
+                        builder = new ImmutableNode<string>(null, ">", builder);
+                        for (var i = 0; i < arity; i++)
+                        {
+                            argumentsLeft--;
+                            builder = new ImmutableNode<string>(
+                                genericInstantiationTypeReference.GenericTypeArguments[argumentsLeft].Accept(this),
+                                i == 0 ? null : ", ",
+                                builder);
+                        }
+                        builder = new ImmutableNode<string>(null, "<", builder);
+                    }
+                    builder = new ImmutableNode<string>(null, name, builder);
                 }
 
-                return new ImmutableNode<string>(genericInstantiationTypeReference.TypeDefinition.Accept(this), "<", current);
+
+                var currentType = genericInstantiationTypeReference.TypeDefinition;
+                for (; currentType is NestedTypeReference nested; currentType = nested.DeclaringType)
+                {
+                    BuildNext(nested.Name);
+                    builder = new ImmutableNode<string>(null, ".", builder);
+                }
+
+                topLevel = currentType as TopLevelTypeReference ??
+                    throw new InvalidOperationException("Nested types must be declared by either a top-level type or another nested type.");
+
+                BuildNext(topLevel.Name);
+
+                if (argumentsLeft != 0) throw new InvalidOperationException("Number of generic arguments provided does not match combined type arity.");
+                return AddNamespace(topLevel, builder);
             }
 
             private static readonly string[] ValueTupleNamesByArity =
@@ -162,7 +216,7 @@ namespace ApiContractGenerator
 
             public ImmutableNode<string> Visit(NestedTypeReference nestedTypeReference)
             {
-                return new ImmutableNode<string>(nestedTypeReference.DeclaringType.Accept(this), ".", new ImmutableNode<string>(null, nestedTypeReference.Name, null));
+                return new ImmutableNode<string>(nestedTypeReference.DeclaringType.Accept(this), ".", BuildNameWithArity(nestedTypeReference.Name));
             }
 
             public ImmutableNode<string> Visit(PointerTypeReference pointerTypeReference)

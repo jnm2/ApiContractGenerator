@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -503,7 +504,50 @@ namespace ApiContractGenerator
             }
         }
 
-        private void WriteConstantPrimitive(IMetadataConstantValue metadataConstantValue)
+        /// <param name="value">Must be a numeric string formatted using the invariant culture "g" format.</param>
+        private void WriteNumericString(string value)
+        {
+            foreach (var c in value)
+                if (c == 'E' || c == 'e')
+                {
+                    writer.Write(value);
+                    return;
+                }
+
+            var hasSign = value[0] == '-';
+            var span = hasSign ? value.Slice(1) : value;
+            var characteristicDigitCount = span.IndexOf('.');
+            if (characteristicDigitCount == -1) characteristicDigitCount = span.Length;
+            if (characteristicDigitCount < 5)
+            {
+                writer.Write(value);
+                return;
+            }
+
+            if (hasSign) writer.Write('-');
+
+            var position = ((characteristicDigitCount - 1) % 3) + 1;
+
+            var digitBuffer = new char[4];
+            digitBuffer[0] = '_';
+
+            span.CopyTo(0, digitBuffer, 1, position);
+            writer.Write(digitBuffer, 1, position);
+
+            do
+            {
+                span.CopyTo(position, digitBuffer, 1, 3);
+                writer.Write(digitBuffer);
+                position += 3;
+            } while (position != characteristicDigitCount);
+
+            var remainingCount = span.Length - characteristicDigitCount;
+            var remainingBuffer = remainingCount <= 4 ? digitBuffer : new char[remainingCount];
+            span.CopyTo(characteristicDigitCount, remainingBuffer, 0, remainingCount);
+            writer.Write(remainingBuffer, 0, remainingCount);
+        }
+
+        public void WriteConstantPrimitive(IMetadataConstantValue metadataConstantValue)
         {
             switch (metadataConstantValue.TypeCode)
             {
@@ -520,29 +564,77 @@ namespace ApiContractGenerator
                     writer.Write(metadataConstantValue.GetValueAsByte());
                     break;
                 case ConstantTypeCode.Int16:
-                    writer.Write(metadataConstantValue.GetValueAsInt16());
+                {
+                    var value = metadataConstantValue.GetValueAsInt16();
+                    if (-10_000 < value && value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.UInt16:
-                    writer.Write(metadataConstantValue.GetValueAsUInt16());
+                {
+                    var value = metadataConstantValue.GetValueAsUInt16();
+                    if (value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.Int32:
-                    writer.Write(metadataConstantValue.GetValueAsInt32());
+                {
+                    var value = metadataConstantValue.GetValueAsInt32();
+                    if (-10_000 < value && value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.UInt32:
-                    writer.Write(metadataConstantValue.GetValueAsUInt32());
+                {
+                    var value = metadataConstantValue.GetValueAsUInt32();
+                    if (value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.Int64:
-                    writer.Write(metadataConstantValue.GetValueAsInt64());
+                {
+                    var value = metadataConstantValue.GetValueAsInt64();
+                    if (-10_000 < value && value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.UInt64:
-                    writer.Write(metadataConstantValue.GetValueAsUInt64());
+                {
+                    var value = metadataConstantValue.GetValueAsUInt64();
+                    if (value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.Single:
-                    writer.Write(metadataConstantValue.GetValueAsSingle());
+                {
+                    var value = metadataConstantValue.GetValueAsSingle();
+                    if (-10_000 < value && value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.Double:
-                    writer.Write(metadataConstantValue.GetValueAsDouble());
+                {
+                    var value = metadataConstantValue.GetValueAsDouble();
+                    if (-10_000 < value && value < 10_000)
+                        writer.Write(value);
+                    else
+                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
                     break;
+                }
                 case ConstantTypeCode.String:
                     WriteStringLiteral(metadataConstantValue.GetValueAsString());
                     break;

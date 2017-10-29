@@ -8,25 +8,26 @@ namespace ApiContractGenerator.Internal
     {
         private readonly string value;
         private readonly int start;
-        private readonly int length;
+
+        public int Length { get; }
 
         private StringSpan(string value, int start, int length)
         {
             this.value = value;
             this.start = start;
-            this.length = length;
+            Length = length;
         }
 
         public StringSpan Slice(int start)
         {
-            if (start < 0 || start > length) throw new ArgumentOutOfRangeException(nameof(start), start, "Start must be greater than or equal to zero and less than or equal to the current length.");
-            return new StringSpan(value, this.start + start, length - start);
+            if (start < 0 || start > Length) throw new ArgumentOutOfRangeException(nameof(start), start, "Start must be greater than or equal to zero and less than or equal to the current length.");
+            return new StringSpan(value, this.start + start, Length - start);
         }
 
         public StringSpan Slice(int start, int length)
         {
-            if (start < 0 || start > this.length) throw new ArgumentOutOfRangeException(nameof(start), start, "Start must be greater than or equal to zero and less than or equal to the current length.");
-            if (length < 0 || start + length > this.length) throw new ArgumentOutOfRangeException(nameof(length), length, "Length must be greater than or equal to zero and less than or equal to the current length minus the start.");
+            if (start < 0 || start > Length) throw new ArgumentOutOfRangeException(nameof(start), start, "Start must be greater than or equal to zero and less than or equal to the current length.");
+            if (length < 0 || start + length > Length) throw new ArgumentOutOfRangeException(nameof(length), length, "Length must be greater than or equal to zero and less than or equal to the current length minus the start.");
             return new StringSpan(value, this.start + start, length);
         }
 
@@ -34,18 +35,25 @@ namespace ApiContractGenerator.Internal
 
         public static explicit operator string(StringSpan value) => value.ToString();
 
-        public override string ToString() => value.Substring(start, length);
+        public override string ToString() => value.Substring(start, Length);
 
         public int IndexOf(char value)
         {
-            var r = this.value.IndexOf(value, start, length);
+            var r = this.value.IndexOf(value, start, Length);
             return r == -1 ? -1 : r - start;
         }
 
         public int LastIndexOf(char value)
         {
-            var r = this.value.LastIndexOf(value, start + length - 1, length);
+            var r = this.value.LastIndexOf(value, start + Length - 1, Length);
             return r == -1 ? -1 : r - start;
+        }
+
+        public void CopyTo(int sourceIndex, char[] destination, int destinationIndex, int count)
+        {
+            if (sourceIndex < 0 || sourceIndex > Length) throw new ArgumentOutOfRangeException(nameof(sourceIndex), sourceIndex, "Source index must be greater than or equal to zero and less than or equal to the current length.");
+            if (count < 0 || sourceIndex + count > Length) throw new ArgumentOutOfRangeException(nameof(count), count, "Count must be greater than or equal to zero and less than or equal to the current length minus the source index.");
+            value.CopyTo(start + sourceIndex, destination, destinationIndex, count);
         }
     }
 

@@ -108,7 +108,7 @@ namespace ApiContractGenerator.Tests.Integration
         }
 
         [TestCase("Optional x As System.DateTime = Nothing", "[System.Runtime.CompilerServices.DateTimeConstant(0)] System.DateTime x = default")]
-        [TestCase("Optional x As System.DateTime = #1970/01/01#", "[System.Runtime.CompilerServices.DateTimeConstant(621355968000000000)] System.DateTime x = default")]
+        [TestCase("Optional x As System.DateTime = #1970/01/01#", "[System.Runtime.CompilerServices.DateTimeConstant(621_355_968_000_000_000)] System.DateTime x = default")]
         public static void DateTime_default_value_is_shown_as_non_constant(string source, string api)
         {
             Assert.That("Public Interface ITest : Sub Method(" + source + ") : End Interface", HasContract(

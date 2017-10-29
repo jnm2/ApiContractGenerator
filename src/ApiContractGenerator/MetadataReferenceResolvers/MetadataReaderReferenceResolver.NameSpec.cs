@@ -32,6 +32,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                     if (nestedNames == null) nestedNames = new List<string>();
                     nestedNames.Add(nested.Name);
                 }
+                nestedNames?.Reverse();
 
                 if (!(enumTypeReference is TopLevelTypeReference topLevel))
                     throw new ArgumentException($"Type reference must either be a {nameof(TopLevelTypeReference)} or a {nameof(NestedTypeReference)}.", nameof(enumTypeReference));

@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace ApiContractGenerator.Internal
 {
     [DebuggerDisplay("{ToString()}")]
-    internal struct StringSpan
+    public struct StringSpan
     {
         private readonly string value;
         private readonly int start;
@@ -38,16 +38,18 @@ namespace ApiContractGenerator.Internal
 
         public int IndexOf(char value)
         {
-            return this.value.IndexOf(value, start, length);
+            var r = this.value.IndexOf(value, start, length);
+            return r == -1 ? -1 : r - start;
         }
 
         public int LastIndexOf(char value)
         {
-            return this.value.LastIndexOf(value, start + length - 1, length);
+            var r = this.value.LastIndexOf(value, start + length - 1, length);
+            return r == -1 ? -1 : r - start;
         }
     }
 
-    internal static class StringSpanExtensions
+    public static class StringSpanExtensions
     {
         public static StringSpan Slice(this string value, int start)
         {

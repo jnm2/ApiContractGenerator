@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator
@@ -93,6 +94,42 @@ namespace ApiContractGenerator
 
             public ImmutableNode<string> Visit(TopLevelTypeReference topLevelTypeReference)
             {
+                if (topLevelTypeReference.Namespace == "System")
+                {
+                    switch (topLevelTypeReference.Name)
+                    {
+                        case "Void":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Void];
+                        case "Boolean":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Boolean];
+                        case "Char":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Char];
+                        case "SByte":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.SByte];
+                        case "Byte":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Byte];
+                        case "Int16":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Int16];
+                        case "UInt16":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.UInt16];
+                        case "Int32":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Int32];
+                        case "UInt32":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.UInt32];
+                        case "Int64":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Int64];
+                        case "UInt64":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.UInt64];
+                        case "Single":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Single];
+                        case "Double":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Double];
+                        case "String":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.String];
+                        case "Object":
+                            return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Object];
+                    }
+                }
                 return AddNamespace(topLevelTypeReference, BuildNameWithArity(topLevelTypeReference.Name));
             }
 

@@ -7,7 +7,7 @@ namespace ApiContractGenerator.Tests.Integration
 {
     public abstract class IntegrationTests
     {
-        public static Constraint HasContract(params string[] lines)
+        public static ContractConstraint HasContract(params string[] lines)
         {
             if (lines == null) throw new ArgumentNullException(nameof(lines));
 
@@ -23,9 +23,19 @@ namespace ApiContractGenerator.Tests.Integration
             return new ContractConstraint(expected.ToString());
         }
 
-        private sealed class ContractConstraint : Constraint
+        public sealed class ContractConstraint : Constraint
         {
             private readonly string expected;
+            private bool isVisualBasic;
+
+            public ContractConstraint SourceIsVisualBasic
+            {
+                get
+                {
+                    isVisualBasic = true;
+                    return this;
+                }
+            }
 
             public ContractConstraint(string expected)
             {
@@ -37,7 +47,11 @@ namespace ApiContractGenerator.Tests.Integration
                 if (!((object)actual is string sourceCode))
                     throw new ArgumentException("Expected source code as string.", nameof(actual));
 
-                return new ContractConstraintResult(this, AssemblyUtils.GenerateContract(sourceCode), expected);
+                var actualContract = isVisualBasic
+                    ? AssemblyUtils.GenerateContract(sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest)
+                    : AssemblyUtils.GenerateContract(sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest);
+
+                return new ContractConstraintResult(this, actualContract, expected);
             }
 
             private sealed class ContractConstraintResult : ConstraintResult

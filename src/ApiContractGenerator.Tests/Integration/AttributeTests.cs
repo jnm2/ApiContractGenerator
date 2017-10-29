@@ -28,5 +28,93 @@ namespace ApiContractGenerator.Tests.Integration
                 "    }",
                 "}"));
         }
+
+        [Test]
+        public static void Attribute_argument_with_serialized_generic_enum_type_name()
+        {
+            Assert.That("[Test(A.B.C<int, object>.D<A.B.C<int, object>.D<int>.E>.E.F)] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } }" +
+                        "namespace A.B { public static class C<T1, T2> { public static class D<T3> { public enum E { F } } } }", HasContract(
+                "[Test(A.B.C<int, object>.D<A.B.C<int, object>.D<int>.E>.E.F)]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "}",
+                "namespace A.B",
+                "{",
+                "    public static class C<T1, T2>",
+                "    {",
+                "        public static class D<T3>",
+                "        {",
+                "            public enum E : int",
+                "            {",
+                "                F = 0",
+                "            }",
+                "        }",
+                "    }",
+                "}"));
+        }
+
+        [Test]
+        public static void Attribute_argument_with_serialized_type_name()
+        {
+            Assert.That("[Test(typeof(A.B.C.D))] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } }" +
+                        "namespace A.B { public static class C { public static class D { } } }", HasContract(
+                "[Test(typeof(A.B.C.D))]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "}",
+                "namespace A.B",
+                "{",
+                "    public static class C",
+                "    {",
+                "        public static class D",
+                "        {",
+                "        }",
+                "    }",
+                "}"));
+        }
+
+        [Test]
+        public static void Attribute_argument_with_serialized_open_generic_type_name()
+        {
+            Assert.That("[Test(typeof(A.B.C<,>.D<>))] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } }" +
+                        "namespace A.B { public static class C<T1, T2> { public static class D<T3> { } } }", HasContract(
+                "[Test(typeof(A.B.C<,>.D<>))]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "}",
+                "namespace A.B",
+                "{",
+                "    public static class C<T1, T2>",
+                "    {",
+                "        public static class D<T3>",
+                "        {",
+                "        }",
+                "    }",
+                "}"));
+        }
+
+        [Test]
+        public static void Attribute_argument_with_serialized_closed_generic_type_name()
+        {
+            Assert.That("[Test(typeof(A.B.C<int, object>.D<A.B.C<int, object>.D<int>>))] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } }" +
+                        "namespace A.B { public static class C<T1, T2> { public class D<T3> { private D() { } } } }", HasContract(
+                "[Test(typeof(A.B.C<int, object>.D<A.B.C<int, object>.D<int>>))]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "}",
+                "namespace A.B",
+                "{",
+                "    public static class C<T1, T2>",
+                "    {",
+                "        public class D<T3>",
+                "        {",
+                "        }",
+                "    }",
+                "}"));
+        }
     }
 }

@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace ApiContractGenerator.Internal
 {
     [DebuggerDisplay("{ToString()}")]
-    internal struct StringSpan
+    public struct StringSpan
     {
         private readonly string value;
         private readonly int start;
@@ -47,7 +47,7 @@ namespace ApiContractGenerator.Internal
         }
     }
 
-    internal static class StringSpanExtensions
+    public static class StringSpanExtensions
     {
         public static StringSpan Slice(this string value, int start)
         {

@@ -116,5 +116,37 @@ namespace ApiContractGenerator.Tests.Integration
                 "    }",
                 "}"));
         }
+
+        [TestCase("int[]")]
+        [TestCase("int[,]")]
+        [TestCase("int[][]")]
+        [TestCase("System.Action<int[]>[]")]
+        public static void Attribute_argument_with_serialized_array_type_name(string typeName)
+        {
+            Assert.That("[Test(typeof(" + typeName + "))] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } }", HasContract(
+                "[Test(typeof(" + typeName + "))]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "}"));
+        }
+
+        [TestCase("int*")]
+        [TestCase("int**")]
+        [TestCase("System.IntPtr*")]
+        [TestCase("TestAttribute.Nested*")]
+        public static void Attribute_argument_with_serialized_pointer_type_name(string typeName)
+        {
+            Assert.That("[Test(typeof(" + typeName + "))] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } public struct Nested { } }", HasContract(
+                "[Test(typeof(" + typeName + "))]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "",
+                "    public struct Nested",
+                "    {",
+                "    }",
+                "}"));
+        }
     }
 }

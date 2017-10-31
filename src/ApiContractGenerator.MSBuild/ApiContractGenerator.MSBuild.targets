@@ -1,0 +1,29 @@
+<Project TreatAsLocalProperty="TasksDirectory">
+
+  <PropertyGroup>
+    <TasksDirectory Condition=" '$(MSBuildRuntimeType)' == 'Core' ">$(MSBuildThisFileDirectory)..\tasks\netstandard1.6\</TasksDirectory>
+    <TasksDirectory Condition=" '$(MSBuildRuntimeType)' != 'Core' ">$(MSBuildThisFileDirectory)..\tasks\net46\</TasksDirectory>
+  </PropertyGroup>
+
+  <UsingTask TaskName="GenerateApiContract" AssemblyFile="$(TasksDirectory)ApiContractGenerator.MSBuild.dll" />
+
+  <Target Name="ResolveApiContractPaths" BeforeTargets="GenerateApiContract">
+    <ItemGroup>
+      <ApiContractAssembly Update="@(ApiContractAssembly)">
+        <ResolvedAssemblyPath>$([System.IO.Path]::Combine('$(OutputPath)', '%(Identity)'))</ResolvedAssemblyPath>
+        <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' != '' ">%(ApiContractAssembly.OutputPath)</ResolvedOutputPath>
+        <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' == '' and '$(TargetFramework)' != '' ">%(Filename).$(TargetFramework).pubapi.txt</ResolvedOutputPath>
+        <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' == '' and '$(TargetFramework)' == '' ">%(Filename).pubapi.txt</ResolvedOutputPath>
+      </ApiContractAssembly>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GenerateApiContract"
+          AfterTargets="AfterBuild"
+          Inputs="$(MSBuildProjectFile);%(ApiContractAssembly.ResolvedAssemblyPath)"
+          Outputs="%(ApiContractAssembly.ResolvedOutputPath)">
+
+    <GenerateApiContract Assemblies="@(ApiContractAssembly)" IgnoredNamespaces="@(ApiContractIgnoredNamespace)" />
+  </Target>
+
+</Project>

@@ -1,0 +1,10 @@
+<Project>
+
+  <PropertyGroup>
+    <Product>ApiContractGenerator</Product>
+    <Version>1.0.0-alpha</Version>
+    <Authors>jnm2</Authors>
+    <Copyright>Copyright © 2017 Joseph Musser</Copyright>
+  </PropertyGroup>
+
+</Project>

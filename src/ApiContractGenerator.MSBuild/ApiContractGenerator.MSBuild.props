@@ -1,0 +1,12 @@
+<Project>
+
+  <ItemDefinitionGroup>
+    <ApiContractAssembly>
+      <InProject>false</InProject>
+    </ApiContractAssembly>
+    <ApiContractIgnoredNamespace>
+      <InProject>false</InProject>
+    </ApiContractIgnoredNamespace>
+  </ItemDefinitionGroup>
+
+</Project>

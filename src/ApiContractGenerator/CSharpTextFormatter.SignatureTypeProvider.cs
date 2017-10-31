@@ -57,13 +57,13 @@ namespace ApiContractGenerator
             }
 
 
-            private static readonly List<string> ArraySuffixesByDimension = new List<string> { null, "[]" };
+            private static readonly List<string> ArraySuffixesByDimension = new List<string> { null, "[]", "[,]", "[,,]", "[,,,]", "[,,,,]", "[,,,,,]", "[,,,,,,]", "[,,,,,,,]" };
 
             public ImmutableNode<string> Visit(ArrayTypeReference array)
             {
-                while (ArraySuffixesByDimension.Count < array.Dimensions)
+                while (ArraySuffixesByDimension.Count < array.Rank)
                 {
-                    var buffer = new char[array.Dimensions + 1];
+                    var buffer = new char[array.Rank + 1];
                     buffer[0] = '[';
                     for (var i = 1; i < buffer.Length - 2; i++)
                         buffer[i] = ',';
@@ -71,7 +71,7 @@ namespace ApiContractGenerator
                     ArraySuffixesByDimension.Add(new string(buffer));
                 }
 
-                return new ImmutableNode<string>(array.ElementType.Accept(this), ArraySuffixesByDimension[array.Dimensions], null);
+                return new ImmutableNode<string>(array.ElementType.Accept(this), ArraySuffixesByDimension[array.Rank], null);
             }
 
             private static readonly ImmutableNode<string> GenericParameterListEnd = new ImmutableNode<string>(null, ">", null);

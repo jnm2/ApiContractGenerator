@@ -89,6 +89,13 @@ namespace ApiContractGenerator
 
         private static MetadataTypeReference GetNamedType(StringSpan typeFullName, StringSpan assemblyName)
         {
+            var pointerLevels = 0;
+            for (var i = typeFullName.Length - 1; i >= 0 && typeFullName[i] == '*'; i--)
+            {
+                typeFullName = typeFullName.Slice(0, typeFullName.Length - 1);
+                pointerLevels++;
+            }
+
             var nestedNameSplit = typeFullName.IndexOf('+');
             var topLevelName = nestedNameSplit == -1 ? typeFullName : typeFullName.Slice(0, nestedNameSplit);
 
@@ -102,17 +109,25 @@ namespace ApiContractGenerator
                 topLevelNamespace,
                 topLevelTypeName);
 
-            if (nestedNameSplit == -1) return current;
-
-            var remainingNestedName = typeFullName.Slice(nestedNameSplit + 1);
-
-            for (;;)
+            if (nestedNameSplit != -1)
             {
-                nestedNameSplit = remainingNestedName.IndexOf('+');
-                if (nestedNameSplit == -1) return new NestedTypeReference(current, remainingNestedName.ToString());
-                current = new NestedTypeReference(current, remainingNestedName.Slice(0, nestedNameSplit).ToString());
-                remainingNestedName = remainingNestedName.Slice(nestedNameSplit + 1);
+                var remainingNestedName = typeFullName.Slice(nestedNameSplit + 1);
+
+                for (;;)
+                {
+                    nestedNameSplit = remainingNestedName.IndexOf('+');
+                    if (nestedNameSplit == -1) break;
+                    current = new NestedTypeReference(current, remainingNestedName.Slice(0, nestedNameSplit).ToString());
+                    remainingNestedName = remainingNestedName.Slice(nestedNameSplit + 1);
+                }
+
+                current = new NestedTypeReference(current, remainingNestedName.ToString());
             }
+
+            for (; pointerLevels > 0; pointerLevels--)
+                current = new PointerTypeReference(current);
+
+            return current;
         }
 
         private static char? TryRead(ref StringSpan span)

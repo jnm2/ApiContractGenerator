@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Common.props" />
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.3;net46</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+    <AssemblyTitle>ApiContractGenerator MSBuild integration component</AssemblyTitle>
+    <Description>Generates readable external API contract text files for assemblies on build.</Description>
+    <PackageLicenseUrl>https://github.com/jnm2/ApiContractGenerator/blob/master/LICENSE.txt</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/jnm2/ApiContractGenerator</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.3.409" />
+    <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
+
+    <ProjectReference Include="..\ApiContractGenerator\ApiContractGenerator.csproj" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ApiContractGenerator.MSBuild.props" PackagePath="build" />
+    <Content Include="ApiContractGenerator.MSBuild.targets" PackagePath="build" />
+  </ItemGroup>
+
+  <!-- https://github.com/NuGet/Home/issues/3891#issuecomment-330668337 -->
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);IncludeP2PAssets</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <Target Name="IncludeP2PAssets">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutputPath)*.dll" />
+    </ItemGroup>
+  </Target>
+
+</Project>

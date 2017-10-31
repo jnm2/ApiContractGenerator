@@ -11,10 +11,11 @@ namespace ApiContractGenerator
         public static MetadataTypeReference Deserialize(string serializedName)
         {
             var remaining = (StringSpan)serializedName;
+
             var (typeName, genericParameters) = ReadTypeParts(ref remaining);
             var assemblyName = TryReadAssemblyName(remaining);
-            var namedType = GetNamedType(typeName, assemblyName);
-            return genericParameters == null ? namedType : new GenericInstantiationTypeReference(namedType, genericParameters);
+
+            return CreateType(typeName, assemblyName, genericParameters);
         }
 
         private static (StringSpan typeName, IReadOnlyList<MetadataTypeReference> genericParameters)
@@ -67,8 +68,7 @@ namespace ApiContractGenerator
                 remaining = remaining.Slice(endingBracket + 1);
             }
 
-            var namedType = GetNamedType(typeName, assemblyName);
-            return genericParameters == null ? namedType : new GenericInstantiationTypeReference(namedType, genericParameters);
+            return CreateType(typeName, assemblyName, genericParameters);
         }
 
         /// <param name="span">Entire assembly name span if any, including comma.</param>
@@ -87,7 +87,7 @@ namespace ApiContractGenerator
             return span;
         }
 
-        private static MetadataTypeReference GetNamedType(StringSpan typeFullName, StringSpan assemblyName)
+        private static MetadataTypeReference CreateType(StringSpan typeFullName, StringSpan assemblyName, IReadOnlyList<MetadataTypeReference> genericParameters)
         {
             var pointerLevels = 0;
             for (var i = typeFullName.Length - 1; i >= 0 && typeFullName[i] == '*'; i--)
@@ -123,6 +123,9 @@ namespace ApiContractGenerator
 
                 current = new NestedTypeReference(current, remainingNestedName.ToString());
             }
+
+            if (genericParameters != null)
+                current = new GenericInstantiationTypeReference(current, genericParameters);
 
             for (; pointerLevels > 0; pointerLevels--)
                 current = new PointerTypeReference(current);

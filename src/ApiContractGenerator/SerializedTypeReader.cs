@@ -12,52 +12,99 @@ namespace ApiContractGenerator
         {
             var remaining = (StringSpan)serializedName;
 
-            var (typeName, genericParameters) = ReadTypeParts(ref remaining);
+            var (typeName, genericArguments, nestedArrayRanks) = ReadTypeParts(ref remaining);
             var assemblyName = TryReadAssemblyName(remaining);
 
-            return CreateType(typeName, assemblyName, genericParameters);
+            return CreateType(typeName, assemblyName, genericArguments, nestedArrayRanks);
         }
 
-        private static (StringSpan typeName, IReadOnlyList<MetadataTypeReference> genericParameters)
+        private static (StringSpan typeName, IReadOnlyList<MetadataTypeReference> genericArguments, IReadOnlyList<int> nestedArrayRanks)
             ReadTypeParts(ref StringSpan remaining)
         {
             var firstComma = remaining.IndexOf(',');
             var beforeComma = firstComma != -1 ? remaining.Slice(0, firstComma) : remaining;
-            var genericParametersStartingBracket = beforeComma.IndexOf('[');
-            if (genericParametersStartingBracket == -1)
+            var firstBracket = beforeComma.IndexOf('[');
+            if (firstBracket == -1)
             {
                 remaining = firstComma != -1 ? remaining.Slice(firstComma) : default;
-                return (beforeComma, null);
+                return (beforeComma, null, null);
             }
 
-            var typeName = remaining.Slice(0, genericParametersStartingBracket);
-            remaining = remaining.Slice(genericParametersStartingBracket + 1);
+            var typeName = remaining.Slice(0, firstBracket);
+            remaining = remaining.Slice(firstBracket + 1);
 
-            var genericParameters = new List<MetadataTypeReference>();
-            while (remaining.Length != 0)
+            var nestedArrayRanks = (List<int>)null;
+
+            IReadOnlyList<MetadataTypeReference> genericArguments;
+            var hasGenericAritySeparator = typeName.LastIndexOf('`') != -1;
+            if (!hasGenericAritySeparator)
+            {
+                genericArguments = null;
+                nestedArrayRanks = new List<int> { ReadArrayRank(ref remaining) };
+            }
+            else
+            {
+                genericArguments = ReadGenericArgumentList(ref remaining);
+                if (genericArguments.Count == 0) throw new FormatException("Expected: generic argument");
+            }
+
+            for (;;)
+            {
+                while (TryRead(ref remaining, ' ')) { }
+                if (!TryRead(ref remaining, '[')) break;
+                if (nestedArrayRanks == null) nestedArrayRanks = new List<int>();
+                nestedArrayRanks.Add(ReadArrayRank(ref remaining));
+            }
+
+            return (typeName, genericArguments, nestedArrayRanks);
+        }
+
+        private static int ReadArrayRank(ref StringSpan remaining)
+        {
+            var rank = 1;
+
+            for (;;)
+            {
+                switch (TryRead(ref remaining))
+                {
+                    case ',':
+                        rank++;
+                        break;
+                    case ' ':
+                        break;
+                    case ']':
+                        return rank;
+                    default:
+                        throw new FormatException("Expected ' ', ',', or ']'");
+                }
+            }
+        }
+
+        private static IReadOnlyList<MetadataTypeReference> ReadGenericArgumentList(ref StringSpan remaining)
+        {
+            var r = new List<MetadataTypeReference>();
+            for (; ; )
             {
                 if (TryRead(ref remaining, ' ')) continue;
 
-                genericParameters.Add(ReadGenericParameter(ref remaining));
+                r.Add(ReadGenericArgument(ref remaining));
                 while (TryRead(ref remaining, ' ')) { }
                 switch (TryRead(ref remaining))
                 {
                     case ']':
-                        return (typeName, genericParameters);
+                        return r;
                     case ',':
                         break;
                     default:
                         throw new FormatException("Expected ' ', ',' or ']'");
                 }
             }
-
-            throw new FormatException("Expected generic parameter");
         }
 
-        private static MetadataTypeReference ReadGenericParameter(ref StringSpan remaining)
+        private static MetadataTypeReference ReadGenericArgument(ref StringSpan remaining)
         {
             var isBracketed = TryRead(ref remaining, '[');
-            var (typeName, genericParameters) = ReadTypeParts(ref remaining);
+            var (typeName, genericArguments, nestedArrayRanks) = ReadTypeParts(ref remaining);
 
             var assemblyName = default(StringSpan);
             if (isBracketed)
@@ -68,7 +115,7 @@ namespace ApiContractGenerator
                 remaining = remaining.Slice(endingBracket + 1);
             }
 
-            return CreateType(typeName, assemblyName, genericParameters);
+            return CreateType(typeName, assemblyName, genericArguments, nestedArrayRanks);
         }
 
         /// <param name="span">Entire assembly name span if any, including comma.</param>
@@ -87,7 +134,7 @@ namespace ApiContractGenerator
             return span;
         }
 
-        private static MetadataTypeReference CreateType(StringSpan typeFullName, StringSpan assemblyName, IReadOnlyList<MetadataTypeReference> genericParameters)
+        private static MetadataTypeReference CreateType(StringSpan typeFullName, StringSpan assemblyName, IReadOnlyList<MetadataTypeReference> genericArguments, IReadOnlyList<int> nestedArrayRanks)
         {
             var pointerLevels = 0;
             for (var i = typeFullName.Length - 1; i >= 0 && typeFullName[i] == '*'; i--)
@@ -124,11 +171,15 @@ namespace ApiContractGenerator
                 current = new NestedTypeReference(current, remainingNestedName.ToString());
             }
 
-            if (genericParameters != null)
-                current = new GenericInstantiationTypeReference(current, genericParameters);
+            if (genericArguments != null)
+                current = new GenericInstantiationTypeReference(current, genericArguments);
 
             for (; pointerLevels > 0; pointerLevels--)
                 current = new PointerTypeReference(current);
+
+            if (nestedArrayRanks != null)
+                for (var i = nestedArrayRanks.Count - 1; i >= 0; i--)
+                    current = new ArrayTypeReference(current, nestedArrayRanks[i]);
 
             return current;
         }

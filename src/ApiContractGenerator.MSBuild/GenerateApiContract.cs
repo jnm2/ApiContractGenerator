@@ -19,10 +19,10 @@ namespace ApiContractGenerator.MSBuild
 
         public bool Execute()
         {
-            if (Assemblies.Length == 0) return true;
+            if (Assemblies == null || Assemblies.Length == 0) return true;
 
             var generator = new ApiContractGenerator();
-            generator.IgnoredNamespaces.UnionWith(IgnoredNamespaces);
+            if (IgnoredNamespaces != null) generator.IgnoredNamespaces.UnionWith(IgnoredNamespaces);
 
             foreach (var assembly in Assemblies)
             {

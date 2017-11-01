@@ -41,7 +41,7 @@ namespace ApiContractGenerator.Console
             var assemblyResolver = new CompositeAssemblyReferenceResolver(
                 new GacAssemblyReferenceResolver(),
                 new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(assemblyPath)),
-                new SameDirectoryAssemblyReferenceResolver(typeof(object).Assembly.Location));
+                new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(typeof(object).Assembly.Location)));
 
             using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => File.OpenRead(assemblyPath), assemblyResolver))
             using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath), metadataReferenceResolver))

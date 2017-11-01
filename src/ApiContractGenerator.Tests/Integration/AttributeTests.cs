@@ -149,5 +149,19 @@ namespace ApiContractGenerator.Tests.Integration
                 "    }",
                 "}"));
         }
+
+        [TestCase("new object[0]")]
+        [TestCase("new int[0]")]
+        [TestCase("new int[] { 0 }")]
+        [TestCase("new string[] { null, \"\" }")]
+        public static void Attribute_array_argument(string argument)
+        {
+            Assert.That("[Test(" + argument + ")] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } }", HasContract(
+                "[Test(" + argument + ")]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "}"));
+        }
     }
 }

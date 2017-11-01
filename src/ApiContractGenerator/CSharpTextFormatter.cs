@@ -487,6 +487,9 @@ namespace ApiContractGenerator
                 case GenericInstantiationTypeReference genericInstantiation:
                     return IsNullLiteralAllowed(genericInstantiation.TypeDefinition);
 
+                case ArrayTypeReference _:
+                case PointerTypeReference _:
+                case ByRefTypeReference _:
                 case TopLevelTypeReference topLevel when topLevel.Name == "Nullable`1" && topLevel.Namespace == "System":
                     return true;
 

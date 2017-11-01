@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using ApiContractGenerator.AssemblyReferenceResolvers;
 using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Source;
@@ -31,7 +32,8 @@ namespace ApiContractGenerator.MSBuild
 
                 var assemblyResolver = new CompositeAssemblyReferenceResolver(
                     new GacAssemblyReferenceResolver(),
-                    new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(assemblyPath)));
+                    new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(assemblyPath)),
+                    new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(typeof(object).GetTypeInfo().Assembly.Location)));
 
                 using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => File.OpenRead(assemblyPath), assemblyResolver))
                 using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath), metadataReferenceResolver))

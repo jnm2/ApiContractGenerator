@@ -57,9 +57,11 @@ namespace ApiContractGenerator.Tests.Integration
         [TestCase("System.Exception x = null")]
         [TestCase("System.Action x = null")]
         [TestCase("System.TypedReference x = default")]
+        [TestCase("object[] x = null")]
+        [TestCase("int* x = null")]
         public static void Default_value_is_type_default(string parameterDefinition)
         {
-            Assert.That("public interface ITest { void Method(" + parameterDefinition + "); }", HasContract(
+            Assert.That("public interface ITest { unsafe void Method(" + parameterDefinition + "); }", HasContract(
                 "public interface ITest",
                 "{",
                 "    void Method(" + parameterDefinition + ");",

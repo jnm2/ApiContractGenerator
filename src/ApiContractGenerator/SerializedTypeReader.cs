@@ -26,6 +26,13 @@ namespace ApiContractGenerator
             var firstBracket = beforeComma.IndexOf('[');
             if (firstBracket == -1)
             {
+                var outerEndingBracket = beforeComma.IndexOf(']');
+                if (outerEndingBracket != -1)
+                {
+                    remaining = remaining.Slice(outerEndingBracket);
+                    return (beforeComma.Slice(0, outerEndingBracket), null, null);
+                }
+
                 remaining = firstComma != -1 ? remaining.Slice(firstComma) : default;
                 return (beforeComma, null, null);
             }

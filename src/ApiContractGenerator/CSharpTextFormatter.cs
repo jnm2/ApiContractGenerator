@@ -1494,7 +1494,7 @@ namespace ApiContractGenerator
                 }
 
                 var attribute = attributes[i];
-                Write(GetShortenedAttributeName(attribute.AttributeType), currentNamespace);
+                Write(GetShortenedAttributeName(attribute.AttributeType) ?? attribute.AttributeType, currentNamespace);
 
                 var namedArgs = attribute.NamedArguments;
                 var fixedArgs = attribute.FixedArguments;

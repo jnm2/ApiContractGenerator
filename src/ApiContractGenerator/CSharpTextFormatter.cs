@@ -826,7 +826,13 @@ namespace ApiContractGenerator
                 var metadataParameter = parameters[i];
 
                 var paramArrayAttribute = AttributeSearch.ParamArrayAttribute();
-                WriteAttributes(AttributeSearch.Extract(metadataParameter.Attributes, paramArrayAttribute), currentNamespace, newLines: false);
+                var attributes = AttributeSearch.Extract(metadataParameter.Attributes, paramArrayAttribute);
+                if (metadataParameter.IsOptional && metadataParameter.DefaultValue == null)
+                {
+                    attributes = attributes.ToList();
+                    ((List<IMetadataAttribute>)attributes).Add(new ManualMetadataAttribute(new TopLevelTypeReference(null, "System.Runtime.InteropServices", "OptionalAttribute")));
+                }
+                WriteAttributes(attributes, currentNamespace, newLines: false);
 
                 if (i == 0 && isExtensionMethod) writer.Write("this ");
                 if (paramArrayAttribute.Result) writer.Write("params ");
@@ -851,7 +857,7 @@ namespace ApiContractGenerator
                 writer.Write(' ');
                 writer.Write(metadataParameter.Name);
 
-                if (metadataParameter.IsOptional)
+                if (metadataParameter.IsOptional && metadataParameter.DefaultValue != null)
                 {
                     writer.Write(" = ");
                     WriteConstant(metadataParameter.ParameterType, metadataParameter.DefaultValue, currentNamespace, canTargetType: true);

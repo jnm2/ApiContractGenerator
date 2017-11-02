@@ -98,8 +98,8 @@ namespace ApiContractGenerator.Tests.Integration
                 "}"));
         }
 
-        [TestCase("decimal x = 0", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 0)] System.Decimal x = default")]
-        [TestCase("decimal x = 1", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 1)] System.Decimal x = default")]
+        [TestCase("decimal x = 0", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 0), System.Runtime.InteropServices.Optional] System.Decimal x")]
+        [TestCase("decimal x = 1", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 1), System.Runtime.InteropServices.Optional] System.Decimal x")]
         public static void Decimal_default_value_is_shown_as_non_constant(string source, string api)
         {
             Assert.That("public interface ITest { void Method(" + source + "); }", HasContract(
@@ -109,8 +109,8 @@ namespace ApiContractGenerator.Tests.Integration
                 "}"));
         }
 
-        [TestCase("Optional x As System.DateTime = Nothing", "[System.Runtime.CompilerServices.DateTimeConstant(0)] System.DateTime x = default")]
-        [TestCase("Optional x As System.DateTime = #1970/01/01#", "[System.Runtime.CompilerServices.DateTimeConstant(621_355_968_000_000_000)] System.DateTime x = default")]
+        [TestCase("Optional x As System.DateTime = Nothing", "[System.Runtime.CompilerServices.DateTimeConstant(0), System.Runtime.InteropServices.Optional] System.DateTime x")]
+        [TestCase("Optional x As System.DateTime = #1970/01/01#", "[System.Runtime.CompilerServices.DateTimeConstant(621_355_968_000_000_000), System.Runtime.InteropServices.Optional] System.DateTime x")]
         public static void DateTime_default_value_is_shown_as_non_constant(string source, string api)
         {
             Assert.That("Public Interface ITest : Sub Method(" + source + ") : End Interface", HasContract(

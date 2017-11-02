@@ -119,5 +119,15 @@ namespace ApiContractGenerator.Tests.Integration
                 "    void Method(" + api + ");",
                 "}").SourceIsVisualBasic);
         }
+
+        [Test]
+        public static void Optional_without_default()
+        {
+            Assert.That("public interface ITest { void Method([System.Runtime.InteropServices.Optional] int x); }", HasContract(
+                "public interface ITest",
+                "{",
+                "    void Method([System.Runtime.InteropServices.Optional] int x);",
+                "}"));
+        }
     }
 }

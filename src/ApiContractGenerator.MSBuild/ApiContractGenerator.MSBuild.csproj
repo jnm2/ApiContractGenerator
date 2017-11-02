@@ -11,6 +11,7 @@
     <Description>Generates readable external API contract text files for assemblies on build.</Description>
     <PackageLicenseUrl>https://github.com/jnm2/ApiContractGenerator/blob/master/LICENSE.txt</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/jnm2/ApiContractGenerator</PackageProjectUrl>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,7 +32,7 @@
   </PropertyGroup>
   <Target Name="IncludeP2PAssets">
     <ItemGroup>
-      <BuildOutputInPackage Include="$(OutputPath)*.dll" />
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" />
     </ItemGroup>
   </Target>
 

@@ -117,6 +117,22 @@ namespace ApiContractGenerator.Tests.Integration
                 "}"));
         }
 
+        [Test]
+        public static void Attribute_argument_with_serialized_generic_type_name_closed_over_type_in_same_assembly()
+        {
+            Assert.That("[Test(typeof(TestGeneric<TestAttribute>))] public class TestAttribute : System.Attribute { public TestAttribute(object obj) { } }" +
+                        "public class TestGeneric<T> { private TestGeneric() { } }", HasContract(
+                "[Test(typeof(TestGeneric<TestAttribute>))]",
+                "public class TestAttribute : System.Attribute",
+                "{",
+                "    public TestAttribute(object obj);",
+                "}",
+                "",
+                "public class TestGeneric<T>",
+                "{",
+                "}"));
+        }
+
         [TestCase("int[]")]
         [TestCase("int[,]")]
         [TestCase("int[][,]")]

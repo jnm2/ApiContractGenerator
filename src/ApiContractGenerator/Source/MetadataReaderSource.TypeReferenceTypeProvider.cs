@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Metadata;
-using ApiContractGenerator.Internal;
 using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Model.TypeReferences;
 
@@ -81,7 +77,7 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference GetModifiedType(MetadataTypeReference modifier, MetadataTypeReference unmodifiedType, bool isRequired)
             {
-                throw new NotImplementedException();
+                return unmodifiedType;
             }
 
             public MetadataTypeReference GetPinnedType(MetadataTypeReference elementType)

@@ -92,10 +92,22 @@ namespace ApiContractGenerator.Source
                 type = reader.GetTypeReference((TypeReferenceHandle)type.ResolutionScope);
             }
 
-            var assemblyReference = reader.GetAssemblyReference((AssemblyReferenceHandle)type.ResolutionScope);
+            AssemblyName assemblyName;
+            switch (type.ResolutionScope.Kind)
+            {
+                case HandleKind.ModuleReference:
+                    assemblyName = null;
+                    break;
+                case HandleKind.AssemblyReference:
+                    assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)type.ResolutionScope)
+                        .GetAssemblyName(reader);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
 
             MetadataTypeReference current = new TopLevelTypeReference(
-                assemblyReference.GetAssemblyName(reader),
+                assemblyName,
                 reader.GetString(type.Namespace),
                 reader.GetString(type.Name));
 

@@ -163,5 +163,16 @@ namespace ApiContractGenerator.Tests.Integration
                 "    public TestAttribute(object obj);",
                 "}"));
         }
+
+        [Test]
+        public static void Attribute_without_standard_suffix()
+        {
+            Assert.That("[Test] public class Test : System.Attribute { }", HasContract(
+                "[Test]",
+                "public class Test : System.Attribute",
+                "{",
+                "    public Test();",
+                "}"));
+        }
     }
 }

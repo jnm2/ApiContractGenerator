@@ -53,10 +53,6 @@ namespace ApiContractGenerator
 
             public static AttributeSearch<bool> ParamArrayAttribute() => new SimpleAttributeSearch("System", "ParamArrayAttribute");
 
-            public static AttributeSearch<bool> IteratorStateMachineAttribute() => new SimpleAttributeSearch("System.Runtime.CompilerServices", "IteratorStateMachineAttribute");
-
-            public static AttributeSearch<bool> AsyncStateMachineAttribute() => new SimpleAttributeSearch("System.Runtime.CompilerServices", "AsyncStateMachineAttribute");
-
             private sealed class SimpleAttributeSearch : AttributeSearch<bool>
             {
                 public SimpleAttributeSearch(string @namespace, string name) : base(@namespace, name)

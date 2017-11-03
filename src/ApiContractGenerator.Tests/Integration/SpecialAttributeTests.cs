@@ -185,5 +185,16 @@ namespace ApiContractGenerator.Tests.Integration
                     "{",
                     "}"));
         }
+
+        [Test]
+        public static void Ignored_attribute_does_not_cause_newline_between_enum_fields()
+        {
+            Assert.That("public enum Enum { A = 1, [System.Runtime.CompilerServices.CompilerGenerated] B = 2 }", HasContract(
+                    "public enum Enum : int",
+                    "{",
+                    "    A = 1,",
+                    "    B = 2",
+                    "}"));
+        }
     }
 }

@@ -50,23 +50,8 @@ namespace ApiContractGenerator.Source
             private IReadOnlyList<IMetadataParameter> parameters;
             public IReadOnlyList<IMetadataParameter> Parameters
             {
-                get
-                {
-                    if (parameters == null)
-                    {
-                        var handles = InvokeMethod.GetParameters();
-                        var r = new IMetadataParameter[handles.Count];
-                        var signature = InvokeMethodSignature;
-                        foreach (var handle in handles)
-                        {
-                            var parameter = Reader.GetParameter(handle);
-                            var parameterIndex = parameter.SequenceNumber - 1;
-                            r[parameterIndex] = new ReaderParameter(Reader, TypeProvider, parameter, GenericContext, signature.ParameterTypes[parameterIndex]);
-                        }
-                        parameters = r;
-                    }
-                    return parameters;
-                }
+                get => parameters ?? (parameters =
+                    GetParameters(Reader, TypeProvider, GenericContext, InvokeMethodSignature, InvokeMethod.GetParameters()));
             }
         }
     }

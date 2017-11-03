@@ -137,5 +137,26 @@ namespace ApiContractGenerator.Source
                 r.Add(new ReaderAttribute(reader, typeProvider, handle, genericContext));
             return r;
         }
+
+        private static IReadOnlyList<IMetadataParameter> GetParameters(MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericContext genericContext, MethodSignature<MetadataTypeReference> signature, ParameterHandleCollection handles)
+        {
+            var r = new IMetadataParameter[handles.Count];
+            var maxSequenceNumber = 0;
+            foreach (var handle in handles)
+            {
+                var parameter = reader.GetParameter(handle);
+                if (parameter.SequenceNumber == 0) continue;
+                if (maxSequenceNumber < parameter.SequenceNumber) maxSequenceNumber = parameter.SequenceNumber;
+                var parameterIndex = parameter.SequenceNumber - 1;
+                r[parameterIndex] = new ReaderParameter(reader, typeProvider, parameter, genericContext, signature.ParameterTypes[parameterIndex]);
+            }
+
+            if (maxSequenceNumber == r.Length) return r;
+
+            // Account for skipping the return parameter
+            var correctedLength = new IMetadataParameter[maxSequenceNumber];
+            Array.Copy(r, correctedLength, correctedLength.Length);
+            return correctedLength;
+        }
     }
 }

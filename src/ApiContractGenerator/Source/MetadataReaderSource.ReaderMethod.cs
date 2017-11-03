@@ -83,38 +83,8 @@ namespace ApiContractGenerator.Source
             private IReadOnlyList<IMetadataParameter> parameters;
             public IReadOnlyList<IMetadataParameter> Parameters
             {
-                get
-                {
-                    if (parameters == null)
-                    {
-                        var handles = definition.GetParameters();
-
-                        var r = new IMetadataParameter[handles.Count];
-                        var signature = Signature;
-                        var maxSequenceNumber = 0;
-                        foreach (var handle in handles)
-                        {
-                            var parameter = reader.GetParameter(handle);
-                            if (parameter.SequenceNumber == 0) continue;
-                            if (maxSequenceNumber < parameter.SequenceNumber) maxSequenceNumber = parameter.SequenceNumber;
-                            var parameterIndex = parameter.SequenceNumber - 1;
-                            r[parameterIndex] = new ReaderParameter(reader, typeProvider, parameter, GenericContext, signature.ParameterTypes[parameterIndex]);
-                        }
-
-                        if (maxSequenceNumber != r.Length)
-                        {
-                            // Account for skipping the return parameter
-                            var correctedLength = new IMetadataParameter[maxSequenceNumber];
-                            Array.Copy(r, correctedLength, correctedLength.Length);
-                            parameters = correctedLength;
-                        }
-                        else
-                        {
-                            parameters = r;
-                        }
-                    }
-                    return parameters;
-                }
+                get => parameters ?? (parameters =
+                    GetParameters(reader, typeProvider, GenericContext, Signature, definition.GetParameters()));
             }
         }
     }

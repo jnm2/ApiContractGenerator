@@ -16,7 +16,10 @@ namespace ApiContractGenerator.Tests.Utils
         // Cached for performance
         private static readonly MetadataReference[] MetadataReferences =
         {
-            MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location)
+            MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(System.CodeDom.Compiler.GeneratedCodeAttribute).GetTypeInfo().Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(System.Diagnostics.DebuggerStepperBoundaryAttribute).GetTypeInfo().Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute).GetTypeInfo().Assembly.Location)
         };
 
         private static readonly Lazy<CSharpCompilation> BaseCSharpCompilation = new Lazy<CSharpCompilation>(() =>

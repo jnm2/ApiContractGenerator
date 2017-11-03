@@ -15,6 +15,20 @@ namespace ApiContractGenerator
 {
     public sealed partial class CSharpTextFormatter : IMetadataWriter
     {
+        private static readonly HashSet<(string @namespace, string typeName)> IgnoredAttributes = new HashSet<(string, string)>(new[]
+        {
+            ("System.CodeDom.Compiler", "GeneratedCodeAttribute"),
+            ("System.Runtime.CompilerServices", "CompilerGeneratedAttribute"),
+            ("System.Runtime.CompilerServices", "IteratorStateMachineAttribute"),
+            ("System.Runtime.CompilerServices", "AsyncStateMachineAttribute"),
+            ("System.Diagnostics", "DebuggerHiddenAttribute"),
+            ("System.Diagnostics", "DebuggerNonUserCodeAttribute"),
+            ("System.Diagnostics", "DebuggerStepperBoundaryAttribute"),
+            ("System.Diagnostics", "DebuggerStepThroughAttribute"),
+            ("System.Diagnostics.CodeAnalysis", "ExcludeFromCodeCoverageAttribute"),
+            ("System.Diagnostics.CodeAnalysis", "SuppressMessageAttribute")
+        });
+
         private readonly IndentedTextWriter writer;
         private readonly IMetadataReferenceResolver metadataReferenceResolver;
         private readonly bool spaceLines;
@@ -113,7 +127,7 @@ namespace ApiContractGenerator
                 if (i != numToSkip) writer.Write(", ");
 
                 var parameter = genericParameters[i];
-                WriteAttributes(parameter.Attributes, currentNamespace, newLines: false);
+                WriteAttributes(FilterIgnoredAttributes(parameter.Attributes), currentNamespace, newLines: false);
                 if (parameter.IsContravariant) writer.Write("in ");
                 if (parameter.IsCovariant) writer.Write("out ");
                 writer.Write(parameter.Name);
@@ -649,7 +663,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataField metadataField, string currentNamespace)
         {
-            WriteAttributes(metadataField.Attributes, currentNamespace, newLines: false);
+            WriteAttributes(FilterIgnoredAttributes(metadataField.Attributes), currentNamespace, newLines: false);
             WriteVisibility(metadataField.Visibility);
 
             if (metadataField.IsLiteral)
@@ -691,13 +705,14 @@ namespace ApiContractGenerator
             {
                 var field = fields[i];
 
+                var attributes = FilterIgnoredAttributes(field.Attributes);
                 if (i != 0)
                 {
                     writer.WriteLine(',');
-                    if (field.Attributes.Count != 0) WriteLineSpacing();
+                    if (attributes.Count != 0) WriteLineSpacing();
                 }
 
-                WriteAttributes(field.Attributes, currentNamespace, newLines: true);
+                WriteAttributes(attributes, currentNamespace, newLines: true);
                 writer.Write(field.Name);
                 writer.Write(" = ");
                 WriteConstantPrimitive(field.DefaultValue);
@@ -724,7 +739,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataProperty metadataProperty, IMetadataType declaringType, string defaultMemberName, string currentNamespace)
         {
-            WriteAttributes(metadataProperty.Attributes, currentNamespace, newLines: true);
+            WriteAttributes(FilterIgnoredAttributes(metadataProperty.Attributes), currentNamespace, newLines: true);
 
             var modifiers = MethodModifiers.CombineAccessors(metadataProperty.GetAccessor, metadataProperty.SetAccessor);
             var declaringTypeIsInterface = declaringType is IMetadataInterface;
@@ -778,7 +793,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataEvent metadataEvent, IMetadataType declaringType, string currentNamespace)
         {
-            WriteAttributes(metadataEvent.Attributes, currentNamespace, newLines: true);
+            WriteAttributes(FilterIgnoredAttributes(metadataEvent.Attributes), currentNamespace, newLines: true);
 
             var modifiers = MethodModifiers.CombineAccessors(metadataEvent.AddAccessor, metadataEvent.RemoveAccessor, metadataEvent.RaiseAccessor);
             var declaringTypeIsInterface = declaringType is IMetadataInterface;
@@ -834,7 +849,7 @@ namespace ApiContractGenerator
                     attributes = attributes.ToList();
                     ((List<IMetadataAttribute>)attributes).Add(new ManualMetadataAttribute(new TopLevelTypeReference(null, "System.Runtime.InteropServices", "OptionalAttribute")));
                 }
-                WriteAttributes(attributes, currentNamespace, newLines: false);
+                WriteAttributes(FilterIgnoredAttributes(attributes), currentNamespace, newLines: false);
 
                 if (i == 0 && isExtensionMethod) writer.Write("this ");
                 if (paramArrayAttribute.Result) writer.Write("params ");
@@ -900,11 +915,7 @@ namespace ApiContractGenerator
             var extensionAttribute = AttributeSearch.ExtensionAttribute();
 
             WriteAttributes(
-                AttributeSearch.Extract(
-                    metadataMethod.Attributes,
-                    extensionAttribute,
-                    AttributeSearch.IteratorStateMachineAttribute(),
-                    AttributeSearch.AsyncStateMachineAttribute()),
+                FilterIgnoredAttributes(AttributeSearch.Extract(metadataMethod.Attributes, extensionAttribute)),
                 currentNamespace,
                 newLines: true);
 
@@ -1087,7 +1098,7 @@ namespace ApiContractGenerator
         {
             var defaultMemberAttribute = AttributeSearch.DefaultMemberAttribute();
 
-            WriteAttributes(AttributeSearch.Extract(metadataClass.Attributes, AttributeSearch.ExtensionAttribute(), defaultMemberAttribute), currentNamespace, newLines: true);
+            WriteAttributes(FilterIgnoredAttributes(AttributeSearch.Extract(metadataClass.Attributes, AttributeSearch.ExtensionAttribute(), defaultMemberAttribute)), currentNamespace, newLines: true);
             WriteVisibility(metadataClass.Visibility);
 
             if (metadataClass.IsStatic)
@@ -1109,7 +1120,7 @@ namespace ApiContractGenerator
         {
             var defaultMemberAttribute = AttributeSearch.DefaultMemberAttribute();
 
-            WriteAttributes(AttributeSearch.Extract(metadataStruct.Attributes, defaultMemberAttribute), currentNamespace, newLines: true);
+            WriteAttributes(FilterIgnoredAttributes(AttributeSearch.Extract(metadataStruct.Attributes, defaultMemberAttribute)), currentNamespace, newLines: true);
             WriteVisibility(metadataStruct.Visibility);
             writer.Write("struct ");
             WriteTypeNameAndGenericSignature(metadataStruct, currentNamespace, declaringTypeNumGenericParameters);
@@ -1121,7 +1132,7 @@ namespace ApiContractGenerator
         {
             var defaultMemberAttribute = AttributeSearch.DefaultMemberAttribute();
 
-            WriteAttributes(AttributeSearch.Extract(metadataInterface.Attributes, defaultMemberAttribute), currentNamespace, newLines: true);
+            WriteAttributes(FilterIgnoredAttributes(AttributeSearch.Extract(metadataInterface.Attributes, defaultMemberAttribute)), currentNamespace, newLines: true);
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
             WriteTypeNameAndGenericSignature(metadataInterface, currentNamespace, declaringTypeNumGenericParameters);
@@ -1134,7 +1145,7 @@ namespace ApiContractGenerator
         {
             var defaultMemberAttribute = AttributeSearch.DefaultMemberAttribute();
 
-            WriteAttributes(AttributeSearch.Extract(metadataEnum.Attributes, defaultMemberAttribute), currentNamespace, newLines: true);
+            WriteAttributes(FilterIgnoredAttributes(AttributeSearch.Extract(metadataEnum.Attributes, defaultMemberAttribute)), currentNamespace, newLines: true);
             WriteVisibility(metadataEnum.Visibility);
             writer.Write("enum ");
             WriteTypeNameAndGenericSignature(metadataEnum, currentNamespace, declaringTypeNumGenericParameters);
@@ -1146,7 +1157,7 @@ namespace ApiContractGenerator
 
         public void Write(IMetadataDelegate metadataDelegate, string currentNamespace, int declaringTypeNumGenericParameters)
         {
-            WriteAttributes(metadataDelegate.Attributes, currentNamespace, newLines: true);
+            WriteAttributes(FilterIgnoredAttributes(metadataDelegate.Attributes), currentNamespace, newLines: true);
             WriteVisibility(metadataDelegate.Visibility);
             writer.Write("delegate ");
             Write(metadataDelegate.ReturnType, currentNamespace);
@@ -1478,6 +1489,28 @@ namespace ApiContractGenerator
                 default:
                     return -1;
             }
+        }
+
+        private static IReadOnlyList<IMetadataAttribute> FilterIgnoredAttributes(IReadOnlyList<IMetadataAttribute> attributes)
+        {
+            var r = (List<IMetadataAttribute>)null;
+
+            for (var i = attributes.Count - 1; i >= 0; i--)
+            {
+                var attribute = attributes[i];
+                if (attribute.AttributeType is TopLevelTypeReference topLevel
+                    && IgnoredAttributes.Contains((topLevel.Namespace, topLevel.Name)))
+                {
+                    if (r == null)
+                    {
+                        r = new List<IMetadataAttribute>(attributes.Count);
+                        r.AddRange(attributes);
+                    }
+                    r.RemoveAt(i);
+                }
+            }
+
+            return r ?? attributes;
         }
 
         private void WriteAttributes(IReadOnlyList<IMetadataAttribute> attributes, string currentNamespace, bool newLines)

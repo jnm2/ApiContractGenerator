@@ -675,6 +675,8 @@ namespace ApiContractGenerator
         private void WriteEnumFields(IMetadataEnum metadataEnum, string currentNamespace)
         {
             var fields = metadataEnum.Fields.Where(_ => _.IsLiteral).ToArray();
+            if (fields.Length == 0) return;
+
             var sortInfo = new EnumFieldInfo[fields.Length];
 
             for (var i = 0; i < fields.Length; i++)

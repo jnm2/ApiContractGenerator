@@ -190,5 +190,17 @@ namespace ApiContractGenerator.Tests.Integration
                 "    public Test();",
                 "}"));
         }
+
+        [Test]
+        public static void Delegate_return_value_attribute()
+        {
+            Assert.That("[return: Test] public delegate int Delegate(); public class Test : System.Attribute { }", HasContract(
+                "public delegate int Delegate();",
+                "",
+                "public class Test : System.Attribute",
+                "{",
+                "    public Test();",
+                "}"));
+        }
     }
 }

@@ -20,7 +20,7 @@ namespace ApiContractGenerator.Console
 
             try
             {
-                Main(args[0], args[1]);
+                Run(args[0], args[1]);
             }
             catch (Exception ex)
             {
@@ -31,7 +31,7 @@ namespace ApiContractGenerator.Console
             return 0;
         }
 
-        public static void Main(string assemblyPath, string outputPath)
+        public static void Run(string assemblyPath, string outputPath)
         {
             var generator = new ApiContractGenerator
             {

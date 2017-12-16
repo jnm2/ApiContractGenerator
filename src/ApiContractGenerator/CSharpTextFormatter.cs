@@ -843,7 +843,8 @@ namespace ApiContractGenerator
                 var metadataParameter = parameters[i];
 
                 var paramArrayAttribute = AttributeSearch.ParamArrayAttribute();
-                var attributes = AttributeSearch.Extract(metadataParameter.Attributes, paramArrayAttribute);
+                var isReadOnlyAttribute = AttributeSearch.IsReadOnlyAttribute();
+                var attributes = AttributeSearch.Extract(metadataParameter.Attributes, paramArrayAttribute, isReadOnlyAttribute);
                 if (metadataParameter.IsOptional && metadataParameter.DefaultValue == null)
                 {
                     attributes = attributes.ToList();
@@ -854,11 +855,16 @@ namespace ApiContractGenerator
                 if (i == 0 && isExtensionMethod) writer.Write("this ");
                 if (paramArrayAttribute.Result) writer.Write("params ");
 
-                if (metadataParameter.IsOut)
+                if (metadataParameter.ParameterType is ByRefTypeReference byref)
                 {
-                    if (metadataParameter.ParameterType is ByRefTypeReference byref)
+                    if (metadataParameter.IsOut)
                     {
                         writer.Write("out ");
+                        Write(byref.ElementType, currentNamespace);
+                    }
+                    else if (isReadOnlyAttribute.Result)
+                    {
+                        writer.Write("in ");
                         Write(byref.ElementType, currentNamespace);
                     }
                     else

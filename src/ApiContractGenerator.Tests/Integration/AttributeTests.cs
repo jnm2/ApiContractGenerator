@@ -192,10 +192,27 @@ namespace ApiContractGenerator.Tests.Integration
         }
 
         [Test]
+        public static void Method_return_value_attribute()
+        {
+            Assert.That("public struct A { [return: Test] public void Method() { } } public class Test : System.Attribute { }", HasContract(
+                "public struct A",
+                "{",
+                "    [return: Test]",
+                "    public void Method();",
+                "}",
+                "",
+                "public class Test : System.Attribute",
+                "{",
+                "    public Test();",
+                "}"));
+        }
+
+        [Test]
         public static void Delegate_return_value_attribute()
         {
-            Assert.That("[return: Test] public delegate int Delegate(); public class Test : System.Attribute { }", HasContract(
-                "public delegate int Delegate();",
+            Assert.That("[return: Test] public delegate void Delegate(); public class Test : System.Attribute { }", HasContract(
+                "[return: Test]",
+                "public delegate void Delegate();",
                 "",
                 "public class Test : System.Attribute",
                 "{",

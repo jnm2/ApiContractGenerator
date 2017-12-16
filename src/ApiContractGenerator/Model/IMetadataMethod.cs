@@ -14,6 +14,7 @@ namespace ApiContractGenerator.Model
         bool IsFinal { get; }
         bool IsVirtual { get; }
         MetadataTypeReference ReturnType { get; }
+        IReadOnlyList<IMetadataAttribute> ReturnValueAttributes { get; }
         IReadOnlyList<IMetadataParameter> Parameters { get; }
     }
 }

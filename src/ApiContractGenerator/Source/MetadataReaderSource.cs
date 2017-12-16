@@ -138,25 +138,32 @@ namespace ApiContractGenerator.Source
             return r;
         }
 
-        private static IReadOnlyList<IMetadataParameter> GetParameters(MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericContext genericContext, MethodSignature<MetadataTypeReference> signature, ParameterHandleCollection handles)
+        private static (IReadOnlyList<IMetadataParameter> parameters, IReadOnlyList<IMetadataAttribute> returnValueAttributes)
+            GetParameters(MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericContext genericContext, MethodSignature<MetadataTypeReference> signature, ParameterHandleCollection handles)
         {
-            var r = new IMetadataParameter[handles.Count];
+            var parameters = new IMetadataParameter[handles.Count];
+            var returnValueAttributes = (IReadOnlyList<IMetadataAttribute>)null;
+
             var maxSequenceNumber = 0;
             foreach (var handle in handles)
             {
                 var parameter = reader.GetParameter(handle);
-                if (parameter.SequenceNumber == 0) continue;
+                if (parameter.SequenceNumber == 0)
+                {
+                    returnValueAttributes = GetAttributes(reader, typeProvider, parameter.GetCustomAttributes(), genericContext);
+                    continue;
+                }
                 if (maxSequenceNumber < parameter.SequenceNumber) maxSequenceNumber = parameter.SequenceNumber;
                 var parameterIndex = parameter.SequenceNumber - 1;
-                r[parameterIndex] = new ReaderParameter(reader, typeProvider, parameter, genericContext, signature.ParameterTypes[parameterIndex]);
+                parameters[parameterIndex] = new ReaderParameter(reader, typeProvider, parameter, genericContext, signature.ParameterTypes[parameterIndex]);
             }
 
-            if (maxSequenceNumber == r.Length) return r;
+            if (maxSequenceNumber == parameters.Length) return (parameters, Array.Empty<IMetadataAttribute>());
 
             // Account for skipping the return parameter
             var correctedLength = new IMetadataParameter[maxSequenceNumber];
-            Array.Copy(r, correctedLength, correctedLength.Length);
-            return correctedLength;
+            Array.Copy(parameters, correctedLength, correctedLength.Length);
+            return (correctedLength, returnValueAttributes);
         }
     }
 }

@@ -492,7 +492,7 @@ namespace ApiContractGenerator
                     switch (primitive.Code)
                     {
                         case PrimitiveTypeCode.Object:
-                            case PrimitiveTypeCode.String:
+                        case PrimitiveTypeCode.String:
                             return true;
                         default:
                             return false;
@@ -581,77 +581,77 @@ namespace ApiContractGenerator
                     writer.Write(metadataConstantValue.GetValueAsByte());
                     break;
                 case ConstantTypeCode.Int16:
-                {
-                    var value = metadataConstantValue.GetValueAsInt16();
-                    if (-10_000 < value && value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsInt16();
+                        if (-10_000 < value && value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.UInt16:
-                {
-                    var value = metadataConstantValue.GetValueAsUInt16();
-                    if (value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsUInt16();
+                        if (value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.Int32:
-                {
-                    var value = metadataConstantValue.GetValueAsInt32();
-                    if (-10_000 < value && value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsInt32();
+                        if (-10_000 < value && value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.UInt32:
-                {
-                    var value = metadataConstantValue.GetValueAsUInt32();
-                    if (value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsUInt32();
+                        if (value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.Int64:
-                {
-                    var value = metadataConstantValue.GetValueAsInt64();
-                    if (-10_000 < value && value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsInt64();
+                        if (-10_000 < value && value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.UInt64:
-                {
-                    var value = metadataConstantValue.GetValueAsUInt64();
-                    if (value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsUInt64();
+                        if (value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.Single:
-                {
-                    var value = metadataConstantValue.GetValueAsSingle();
-                    if (-10_000 < value && value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsSingle();
+                        if (-10_000 < value && value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.Double:
-                {
-                    var value = metadataConstantValue.GetValueAsDouble();
-                    if (-10_000 < value && value < 10_000)
-                        writer.Write(value);
-                    else
-                        WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
-                    break;
-                }
+                    {
+                        var value = metadataConstantValue.GetValueAsDouble();
+                        if (-10_000 < value && value < 10_000)
+                            writer.Write(value);
+                        else
+                            WriteNumericString(value.ToString(CultureInfo.InvariantCulture));
+                        break;
+                    }
                 case ConstantTypeCode.String:
                     WriteStringLiteral(metadataConstantValue.GetValueAsString());
                     break;
@@ -925,8 +925,9 @@ namespace ApiContractGenerator
                 currentNamespace,
                 newLines: true);
 
+            var isReadOnlyAttribute = AttributeSearch.IsReadOnlyAttribute();
             WriteAttributes(
-                FilterIgnoredAttributes(metadataMethod.ReturnValueAttributes),
+                FilterIgnoredAttributes(AttributeSearch.Extract(metadataMethod.ReturnValueAttributes, isReadOnlyAttribute)),
                 currentNamespace,
                 newLines: true,
                 target: "return");
@@ -939,21 +940,27 @@ namespace ApiContractGenerator
             }
             else
             {
+                var nameIsAfterType = false;
+
                 switch (metadataMethod.Name)
                 {
                     case "op_Explicit":
                         writer.Write("explicit operator ");
-                        Write(metadataMethod.ReturnType, currentNamespace);
                         break;
                     case "op_Implicit":
                         writer.Write("implicit operator ");
-                        Write(metadataMethod.ReturnType, currentNamespace);
                         break;
                     default:
-                        Write(metadataMethod.ReturnType, currentNamespace);
-                        writer.Write(' ');
-                        writer.Write(OperatorSyntaxByMethodName.TryGetValue(metadataMethod.Name, out var syntax) ? syntax : metadataMethod.Name);
+                        nameIsAfterType = true;
                         break;
+                }
+
+                Write(metadataMethod.ReturnType, currentNamespace, isReadOnlyAttribute.Result);
+
+                if (nameIsAfterType)
+                {
+                    writer.Write(' ');
+                    writer.Write(OperatorSyntaxByMethodName.TryGetValue(metadataMethod.Name, out var syntax) ? syntax : metadataMethod.Name);
                 }
             }
 
@@ -1171,15 +1178,16 @@ namespace ApiContractGenerator
         {
             WriteAttributes(FilterIgnoredAttributes(metadataDelegate.Attributes), currentNamespace, newLines: true);
 
+            var isReadOnlyAttribute = AttributeSearch.IsReadOnlyAttribute();
             WriteAttributes(
-                FilterIgnoredAttributes(metadataDelegate.ReturnValueAttributes),
+                FilterIgnoredAttributes(AttributeSearch.Extract(metadataDelegate.ReturnValueAttributes, isReadOnlyAttribute)),
                 currentNamespace,
                 newLines: true,
                 target: "return");
 
             WriteVisibility(metadataDelegate.Visibility);
             writer.Write("delegate ");
-            Write(metadataDelegate.ReturnType, currentNamespace);
+            Write(metadataDelegate.ReturnType, currentNamespace, isReadOnlyAttribute.Result);
             writer.Write(' ');
             WriteTypeNameAndGenericSignature(metadataDelegate, currentNamespace, declaringTypeNumGenericParameters);
             writer.Write('(');
@@ -1204,17 +1212,17 @@ namespace ApiContractGenerator
             switch (fullAttributeName)
             {
                 case TopLevelTypeReference topLevel:
-                {
-                    if (TryShortenAttributeName(topLevel.Name, out var shortened))
-                        return new TopLevelTypeReference(topLevel.Assembly, topLevel.Namespace, shortened);
-                    break;
-                }
+                    {
+                        if (TryShortenAttributeName(topLevel.Name, out var shortened))
+                            return new TopLevelTypeReference(topLevel.Assembly, topLevel.Namespace, shortened);
+                        break;
+                    }
                 case NestedTypeReference nested:
-                {
-                    if (TryShortenAttributeName(nested.Name, out var shortened))
-                        return new NestedTypeReference(nested.DeclaringType, shortened);
-                    break;
-                }
+                    {
+                        if (TryShortenAttributeName(nested.Name, out var shortened))
+                            return new NestedTypeReference(nested.DeclaringType, shortened);
+                        break;
+                    }
             }
 
             return null;
@@ -1474,37 +1482,37 @@ namespace ApiContractGenerator
             switch (enumInfo.UnderlyingType)
             {
                 case PrimitiveTypeCode.SByte:
-                {
-                    var maxIndex = enumInfo.SortedFields.Count - 1;
-                    for (var i = 0; i <= maxIndex; i++)
-                        if (enumInfo.SortedFields[i].Value.GetValueAsSByte() >= 0)
-                            return i - 1;
-                    return maxIndex;
-                }
+                    {
+                        var maxIndex = enumInfo.SortedFields.Count - 1;
+                        for (var i = 0; i <= maxIndex; i++)
+                            if (enumInfo.SortedFields[i].Value.GetValueAsSByte() >= 0)
+                                return i - 1;
+                        return maxIndex;
+                    }
                 case PrimitiveTypeCode.Int16:
-                {
-                    var maxIndex = enumInfo.SortedFields.Count - 1;
-                    for (var i = 0; i <= maxIndex; i++)
-                        if (enumInfo.SortedFields[i].Value.GetValueAsInt16() >= 0)
-                            return i - 1;
-                    return maxIndex;
-                }
+                    {
+                        var maxIndex = enumInfo.SortedFields.Count - 1;
+                        for (var i = 0; i <= maxIndex; i++)
+                            if (enumInfo.SortedFields[i].Value.GetValueAsInt16() >= 0)
+                                return i - 1;
+                        return maxIndex;
+                    }
                 case PrimitiveTypeCode.Int32:
-                {
-                    var maxIndex = enumInfo.SortedFields.Count - 1;
-                    for (var i = 0; i <= maxIndex; i++)
-                        if (enumInfo.SortedFields[i].Value.GetValueAsInt32() >= 0)
-                            return i - 1;
-                    return maxIndex;
-                }
+                    {
+                        var maxIndex = enumInfo.SortedFields.Count - 1;
+                        for (var i = 0; i <= maxIndex; i++)
+                            if (enumInfo.SortedFields[i].Value.GetValueAsInt32() >= 0)
+                                return i - 1;
+                        return maxIndex;
+                    }
                 case PrimitiveTypeCode.Int64:
-                {
-                    var maxIndex = enumInfo.SortedFields.Count - 1;
-                    for (var i = 0; i <= maxIndex; i++)
-                        if (enumInfo.SortedFields[i].Value.GetValueAsInt64() >= 0)
-                            return i - 1;
-                    return maxIndex;
-                }
+                    {
+                        var maxIndex = enumInfo.SortedFields.Count - 1;
+                        for (var i = 0; i <= maxIndex; i++)
+                            if (enumInfo.SortedFields[i].Value.GetValueAsInt64() >= 0)
+                                return i - 1;
+                        return maxIndex;
+                    }
                 default:
                     return -1;
             }
@@ -1592,6 +1600,23 @@ namespace ApiContractGenerator
                 writer.WriteLine(']');
             else
                 writer.Write("] ");
+        }
+
+        private void Write(MetadataTypeReference typeReference, string currentNamespace, bool isReadonly)
+        {
+            if (isReadonly)
+            {
+                if (typeReference is ByRefTypeReference byRef)
+                {
+                    writer.Write("ref readonly ");
+                    Write(byRef.ElementType, currentNamespace);
+                    return;
+                }
+
+                writer.Write("readonly ");
+            }
+
+            Write(typeReference, currentNamespace);
         }
 
         private void Write(MetadataTypeReference typeReference, string currentNamespace)

@@ -74,5 +74,24 @@ namespace ApiContractGenerator.Tests.Integration
                 "    public void Foo(" + parameterList + ");",
                 "}").WithIgnoredNamespace("Ignored"));
         }
+
+        [TestCase("out Ignored.ShouldUnignore p")]
+        [TestCase("out Ignored.ShouldUnignore[] p")]
+        [TestCase("out Ignored.ShouldUnignore* p")]
+        [TestCase("out System.Collections.Generic.List<Ignored.ShouldUnignore> p")]
+        public static void Nonignored_method_should_unignore_out_parameter_types(string parameterList)
+        {
+            Assert.That("public struct Nonignored { public unsafe void Foo(" + parameterList + ") { p = default; } } namespace Ignored { public struct ShouldUnignore { } }", HasContract(
+                "public struct Nonignored",
+                "{",
+                "    public void Foo(" + parameterList + ");",
+                "}",
+                "namespace Ignored",
+                "{",
+                "    public struct ShouldUnignore",
+                "    {",
+                "    }",
+                "}").WithIgnoredNamespace("Ignored"));
+        }
     }
 }

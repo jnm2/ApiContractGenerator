@@ -69,16 +69,6 @@ namespace ApiContractGenerator.Tests.Utils
             }
         }
 
-        public static string GenerateContract(string sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
-        {
-            return GenerateContract(sourceCode, new ApiContractGenerator(), languageVersion);
-        }
-
-        public static string GenerateContract(string sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion)
-        {
-            return GenerateContract(sourceCode, new ApiContractGenerator(), languageVersion);
-        }
-
         public static string GenerateContract(string sourceCode, ApiContractGenerator generator, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
         {
             using (var writer = new StringWriter())

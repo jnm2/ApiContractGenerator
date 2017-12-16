@@ -80,11 +80,29 @@ namespace ApiContractGenerator.Source
 
             public MetadataTypeReference ReturnType => Signature.ReturnType;
 
+            private void ReadParameters()
+            {
+                (parameters, returnValueAttributes) = GetParameters(reader, typeProvider, GenericContext, Signature, definition.GetParameters());
+            }
+
+            private IReadOnlyList<IMetadataAttribute> returnValueAttributes;
+            public IReadOnlyList<IMetadataAttribute> ReturnValueAttributes
+            {
+                get
+                {
+                    if (returnValueAttributes == null) ReadParameters();
+                    return returnValueAttributes;
+                }
+            }
+
             private IReadOnlyList<IMetadataParameter> parameters;
             public IReadOnlyList<IMetadataParameter> Parameters
             {
-                get => parameters ?? (parameters =
-                    GetParameters(reader, typeProvider, GenericContext, Signature, definition.GetParameters()));
+                get
+                {
+                    if (parameters == null) ReadParameters();
+                    return parameters;
+                }
             }
         }
     }

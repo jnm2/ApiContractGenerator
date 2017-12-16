@@ -919,6 +919,12 @@ namespace ApiContractGenerator
                 currentNamespace,
                 newLines: true);
 
+            WriteAttributes(
+                FilterIgnoredAttributes(metadataMethod.ReturnValueAttributes),
+                currentNamespace,
+                newLines: true,
+                target: "return");
+
             WriteMethodModifiers(MethodModifiers.FromMethod(metadataMethod), declaringType is IMetadataInterface);
 
             if (metadataMethod.Name == ".ctor")
@@ -1158,6 +1164,13 @@ namespace ApiContractGenerator
         public void Write(IMetadataDelegate metadataDelegate, string currentNamespace, int declaringTypeNumGenericParameters)
         {
             WriteAttributes(FilterIgnoredAttributes(metadataDelegate.Attributes), currentNamespace, newLines: true);
+
+            WriteAttributes(
+                FilterIgnoredAttributes(metadataDelegate.ReturnValueAttributes),
+                currentNamespace,
+                newLines: true,
+                target: "return");
+
             WriteVisibility(metadataDelegate.Visibility);
             writer.Write("delegate ");
             Write(metadataDelegate.ReturnType, currentNamespace);
@@ -1513,11 +1526,17 @@ namespace ApiContractGenerator
             return r ?? attributes;
         }
 
-        private void WriteAttributes(IReadOnlyList<IMetadataAttribute> attributes, string currentNamespace, bool newLines)
+        private void WriteAttributes(IReadOnlyList<IMetadataAttribute> attributes, string currentNamespace, bool newLines, string target = null)
         {
             if (attributes.Count == 0) return;
 
             writer.Write('[');
+
+            if (target != null)
+            {
+                writer.Write(target);
+                writer.Write(": ");
+            }
 
             for (var i = 0; i < attributes.Count; i++)
             {

@@ -98,7 +98,7 @@ namespace ApiContractGenerator
                         if (parameter.IsOut // Out var
                             /* TODO: or parameter is delegate type */)
                         {
-                            VisitTypeReference(method.ReturnType);
+                            VisitTypeReference(parameter.ParameterType);
                         }
 
                         // Otherwise, types should not be brought in via method parameters;

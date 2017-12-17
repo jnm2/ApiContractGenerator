@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using ApiContractGenerator.MetadataReferenceResolvers;
 using ApiContractGenerator.Model;
 using ApiContractGenerator.Model.TypeReferences;
 using ApiContractGenerator.Source;
@@ -13,30 +14,34 @@ namespace ApiContractGenerator
     {
         private readonly IMetadataSource source;
         private readonly IEnumerable<string> ignoredNamespaces;
+        private readonly IMetadataReferenceResolver metadataReferenceResolver;
 
-        public IgnoredNamespaceFilter(IMetadataSource source, IEnumerable<string> ignoredNamespaces)
+        public IgnoredNamespaceFilter(IMetadataSource source, IEnumerable<string> ignoredNamespaces, IMetadataReferenceResolver metadataReferenceResolver)
         {
             this.source = source ?? throw new ArgumentNullException(nameof(source));
             this.ignoredNamespaces = ignoredNamespaces ?? throw new ArgumentNullException(nameof(ignoredNamespaces));
+            this.metadataReferenceResolver = metadataReferenceResolver ?? throw new ArgumentNullException(nameof(metadataReferenceResolver));
         }
 
         private IReadOnlyList<IMetadataNamespace> namespaces;
         public IReadOnlyList<IMetadataNamespace> Namespaces
         {
             get => namespaces ?? (namespaces =
-                ReferencedIgnoredMetadataVisitor.CalculateNonignoredTransitiveClosure(source, ignoredNamespaces));
+                ReferencedIgnoredMetadataVisitor.CalculateNonignoredTransitiveClosure(source, ignoredNamespaces, metadataReferenceResolver));
         }
 
         private sealed class ReferencedIgnoredMetadataVisitor
         {
             private readonly IReadOnlyDictionary<string, PartiallyIgnoredNamespaceBuilder> ignoredNamespaces;
+            private readonly IMetadataReferenceResolver metadataReferenceResolver;
 
-            private ReferencedIgnoredMetadataVisitor(IReadOnlyDictionary<string, PartiallyIgnoredNamespaceBuilder> ignoredNamespaces)
+            private ReferencedIgnoredMetadataVisitor(IReadOnlyDictionary<string, PartiallyIgnoredNamespaceBuilder> ignoredNamespaces, IMetadataReferenceResolver metadataReferenceResolver)
             {
                 this.ignoredNamespaces = ignoredNamespaces;
+                this.metadataReferenceResolver = metadataReferenceResolver;
             }
 
-            public static IReadOnlyList<IMetadataNamespace> CalculateNonignoredTransitiveClosure(IMetadataSource source, IEnumerable<string> ignoredNamespaces)
+            public static IReadOnlyList<IMetadataNamespace> CalculateNonignoredTransitiveClosure(IMetadataSource source, IEnumerable<string> ignoredNamespaces, IMetadataReferenceResolver metadataReferenceResolver)
             {
                 var regexBuilder = (StringBuilder)null;
                 foreach (var ignoredNamespace in ignoredNamespaces)
@@ -66,7 +71,7 @@ namespace ApiContractGenerator
 
                 if (ignoredNamespaceLookup.Count != 0)
                 {
-                    var visitor = new ReferencedIgnoredMetadataVisitor(ignoredNamespaceLookup);
+                    var visitor = new ReferencedIgnoredMetadataVisitor(ignoredNamespaceLookup, metadataReferenceResolver);
 
                     foreach (var ns in includedNamespaces)
                     foreach (var type in ns.Types)
@@ -78,6 +83,20 @@ namespace ApiContractGenerator
                 }
 
                 return includedNamespaces;
+            }
+
+            private bool ParameterIsNamedType(MetadataTypeReference type)
+            {
+                switch (type)
+                {
+                    case TopLevelTypeReference _:
+                    case NestedTypeReference _:
+                        return true;
+                    case GenericInstantiationTypeReference instantiation:
+                        return ParameterIsNamedType(instantiation.TypeDefinition);
+                    default:
+                        return false;
+                }
             }
 
             private void VisitNonignoredType(IMetadataType type)
@@ -96,8 +115,11 @@ namespace ApiContractGenerator
                     foreach (var parameter in method.Parameters)
                     {
                         if (parameter.IsOut // Out var
-                            /* TODO: or parameter is delegate type */)
+                            || (ParameterIsNamedType(parameter.ParameterType)
+                                && (!metadataReferenceResolver.TryGetIsDelegateType(parameter.ParameterType, out var isDelegate) // Better safe than sorry
+                                    || isDelegate))) // Delegate parameter types can be syntactically inferred, so ignored types could be used without naming them
                         {
+                            // For delegates we could be even smarter and skip if it has no byval parameters. Future enhancement.
                             VisitTypeReference(parameter.ParameterType);
                         }
 

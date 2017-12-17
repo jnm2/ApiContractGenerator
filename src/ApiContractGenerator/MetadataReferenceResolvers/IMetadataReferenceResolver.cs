@@ -6,5 +6,6 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
     {
         bool TryGetEnumInfo(MetadataTypeReference typeReference, out EnumInfo info);
         bool TryGetIsValueType(MetadataTypeReference typeReference, out bool isValueType);
+        bool TryGetIsDelegateType(MetadataTypeReference typeReference, out bool isDelegateType);
     }
 }

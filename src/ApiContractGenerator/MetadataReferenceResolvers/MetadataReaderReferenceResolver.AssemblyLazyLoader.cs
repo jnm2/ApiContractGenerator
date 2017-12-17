@@ -81,6 +81,11 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                     return CachedInfo.ValueType;
                 }
 
+                if (IsSimpleNamedType(definition.BaseType, "System", "MulticastDelegate"))
+                {
+                    return CachedInfo.Delegate;
+                }
+
                 if (!IsSimpleNamedType(definition.BaseType, "System", "Enum"))
                 {
                     return default;

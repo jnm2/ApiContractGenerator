@@ -99,7 +99,7 @@ namespace ApiContractGenerator.Tests.Utils
 
             using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => assemblyStream.CreateReadOnlyView(), assemblyResolver))
             using (var source = new MetadataReaderSource(assemblyStream, metadataReferenceResolver))
-                generator.Generate(source, new CSharpTextFormatter(writer, metadataReferenceResolver));
+                generator.Generate(source, metadataReferenceResolver, new CSharpTextFormatter(writer, metadataReferenceResolver));
 
             return writer.ToString();
         }

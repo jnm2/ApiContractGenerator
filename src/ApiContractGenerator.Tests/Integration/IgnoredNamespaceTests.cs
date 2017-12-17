@@ -62,6 +62,19 @@ namespace ApiContractGenerator.Tests.Integration
                 "}").WithIgnoredNamespace("Ignored"));
         }
 
+        [Test]
+        public static void Nonignored_delegate_should_unignore_return_type()
+        {
+            Assert.That("public delegate Ignored.ShouldUnignore Foo(); namespace Ignored { public struct ShouldUnignore { } }", HasContract(
+                "public delegate Ignored.ShouldUnignore Foo();",
+                "namespace Ignored",
+                "{",
+                "    public struct ShouldUnignore",
+                "    {",
+                "    }",
+                "}").WithIgnoredNamespace("Ignored"));
+        }
+
         [TestCase("Ignored.ShouldUnignore p")]
         [TestCase("ref Ignored.ShouldUnignore p")]
         [TestCase("in Ignored.ShouldUnignore p")]
@@ -72,6 +85,22 @@ namespace ApiContractGenerator.Tests.Integration
                 "public struct Nonignored",
                 "{",
                 "    public void Foo(" + parameterList + ");",
+                "}").WithIgnoredNamespace("Ignored"));
+        }
+
+        [TestCase("Ignored.ShouldUnignore p")]
+        [TestCase("ref Ignored.ShouldUnignore p")]
+        [TestCase("in Ignored.ShouldUnignore p")]
+        [TestCase("Ignored.ShouldUnignore p = default")]
+        public static void Nonignored_delegate_should_unignore_non_out_parameter_types(string parameterList)
+        {
+            Assert.That("public unsafe delegate void Foo(" + parameterList + "); namespace Ignored { public struct ShouldUnignore { } }", HasContract(
+                "public delegate void Foo(" + parameterList + ");",
+                "namespace Ignored",
+                "{",
+                "    public struct ShouldUnignore",
+                "    {",
+                "    }",
                 "}").WithIgnoredNamespace("Ignored"));
         }
 
@@ -94,6 +123,22 @@ namespace ApiContractGenerator.Tests.Integration
                 "}").WithIgnoredNamespace("Ignored"));
         }
 
+        [TestCase("out Ignored.ShouldUnignore p")]
+        [TestCase("out Ignored.ShouldUnignore[] p")]
+        [TestCase("out Ignored.ShouldUnignore* p")]
+        [TestCase("out System.Collections.Generic.List<Ignored.ShouldUnignore> p")]
+        public static void Nonignored_delegate_should_unignore_out_parameter_types(string parameterList)
+        {
+            Assert.That("public unsafe delegate void Foo(" + parameterList + "); namespace Ignored { public struct ShouldUnignore { } }", HasContract(
+                "public delegate void Foo(" + parameterList + ");",
+                "namespace Ignored",
+                "{",
+                "    public struct ShouldUnignore",
+                "    {",
+                "    }",
+                "}").WithIgnoredNamespace("Ignored"));
+        }
+
         [Test]
         public static void Nonignored_method_should_unignore_delegate_byval_parameter_types()
         {
@@ -106,6 +151,35 @@ namespace ApiContractGenerator.Tests.Integration
                 "{",
                 "    public struct ShouldUnignore",
                 "    {",
+                "    }",
+                "}").WithIgnoredNamespace("Ignored"));
+        }
+
+        [Test]
+        public static void Nonignored_delegate_should_unignore_delegate_byval_parameter_types()
+        {
+            Assert.That("public delegate void Foo(System.Action<Ignored.ShouldUnignore> a); namespace Ignored { public struct ShouldUnignore { } }", HasContract(
+                "public delegate void Foo(System.Action<Ignored.ShouldUnignore> a);",
+                "namespace Ignored",
+                "{",
+                "    public struct ShouldUnignore",
+                "    {",
+                "    }",
+                "}").WithIgnoredNamespace("Ignored"));
+        }
+
+        [Test]
+        public static void Unignored_nested_should_expose_only_name_of_containing_type()
+        {
+            Assert.That("public delegate Ignored.Containing.ShouldUnignore Foo(); namespace Ignored { public struct Containing { public void Hide() { } public struct ShouldUnignore { } } }", HasContract(
+                "public delegate Ignored.Containing.ShouldUnignore Foo();",
+                "namespace Ignored",
+                "{",
+                "    public struct Containing",
+                "    {",
+                "        public struct ShouldUnignore",
+                "        {",
+                "        }",
                 "    }",
                 "}").WithIgnoredNamespace("Ignored"));
         }

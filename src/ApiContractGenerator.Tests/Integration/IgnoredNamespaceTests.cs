@@ -93,5 +93,21 @@ namespace ApiContractGenerator.Tests.Integration
                 "    }",
                 "}").WithIgnoredNamespace("Ignored"));
         }
+
+        [Test]
+        public static void Nonignored_method_should_unignore_delegate_byval_parameter_types()
+        {
+            Assert.That("public struct Nonignored { public unsafe void Foo(System.Action<Ignored.ShouldUnignore> a) { } } namespace Ignored { public struct ShouldUnignore { } }", HasContract(
+                "public struct Nonignored",
+                "{",
+                "    public void Foo(System.Action<Ignored.ShouldUnignore> a);",
+                "}",
+                "namespace Ignored",
+                "{",
+                "    public struct ShouldUnignore",
+                "    {",
+                "    }",
+                "}").WithIgnoredNamespace("Ignored"));
+        }
     }
 }

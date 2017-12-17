@@ -4,6 +4,6 @@ namespace ApiContractGenerator
 {
     public interface IMetadataWriter
     {
-        void Write(IMetadataSource metadataSource);
+        void Write(IMetadataSource metadataSource, bool writeAssemblyMetadata = true);
     }
 }

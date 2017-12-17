@@ -30,6 +30,10 @@ namespace ApiContractGenerator
                 ReferencedIgnoredMetadataVisitor.CalculateNonignoredTransitiveClosure(source, ignoredNamespaces, metadataReferenceResolver));
         }
 
+        public string AssemblyName => source.AssemblyName;
+
+        public byte[] PublicKey => source.PublicKey;
+
         private sealed class ReferencedIgnoredMetadataVisitor
         {
             private readonly IReadOnlyDictionary<string, PartiallyIgnoredNamespaceBuilder> ignoredNamespaces;

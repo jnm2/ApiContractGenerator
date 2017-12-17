@@ -28,6 +28,34 @@ namespace ApiContractGenerator.Source
             peReader.Dispose();
         }
 
+        private string assemblyName;
+        private byte[] publicKey;
+
+        private void ReadAssemblyDefinition()
+        {
+            var definition = reader.GetAssemblyDefinition();
+            assemblyName = reader.GetString(definition.Name);
+            publicKey = definition.PublicKey.IsNil ? null : reader.GetBlobBytes(definition.PublicKey);
+        }
+
+        public string AssemblyName
+        {
+            get
+            {
+                if (assemblyName == null) ReadAssemblyDefinition();
+                return assemblyName;
+            }
+        }
+
+        public byte[] PublicKey
+        {
+            get
+            {
+                if (assemblyName == null) ReadAssemblyDefinition();
+                return publicKey;
+            }
+        }
+
         private IReadOnlyList<IMetadataNamespace> namespaces;
         public IReadOnlyList<IMetadataNamespace> Namespaces
         {
@@ -62,7 +90,6 @@ namespace ApiContractGenerator.Source
                 return namespaces;
             }
         }
-
 
         private static MetadataTypeReference GetTypeFromEntityHandle(MetadataReader reader, TypeReferenceTypeProvider typeProvider, GenericContext genericContext, EntityHandle handle)
         {

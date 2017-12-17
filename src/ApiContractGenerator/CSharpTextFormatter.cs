@@ -45,8 +45,17 @@ namespace ApiContractGenerator
             if (spaceLines) writer.WriteLine();
         }
 
-        public void Write(IMetadataSource metadataSource)
+        public void Write(IMetadataSource metadataSource, bool writeAssemblyMetadata = true)
         {
+            if (writeAssemblyMetadata)
+            {
+                writer.Write("// Name:       ");
+                writer.WriteLine(metadataSource.AssemblyName);
+                writer.Write("// Public key: ");
+                if (metadataSource.PublicKey != null) writer.WriteLine(Convert.ToBase64String(metadataSource.PublicKey));
+                WriteLineSpacing();
+            }
+
             foreach (var metadataNamespace in metadataSource.Namespaces.OrderBy(_ => _.Name))
                 Write(metadataNamespace);
         }

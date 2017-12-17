@@ -25,7 +25,7 @@ namespace ApiContractGenerator.Tests.Integration
 
         public sealed class ContractConstraint : Constraint
         {
-            private readonly ApiContractGenerator generator = new ApiContractGenerator();
+            private readonly ApiContractGenerator generator = new ApiContractGenerator { WriteAssemblyMetadata = false };
             private readonly string expected;
             private bool isVisualBasic;
 

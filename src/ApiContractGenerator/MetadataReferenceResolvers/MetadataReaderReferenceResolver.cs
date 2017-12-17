@@ -46,6 +46,17 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             return false;
         }
 
+        public bool TryGetIsDelegateType(MetadataTypeReference typeReference, out bool isDelegateType)
+        {
+            if (TryGetCachedInfo(typeReference, out var cachedInfo))
+            {
+                isDelegateType = cachedInfo.IsDelegateType;
+                return true;
+            }
+            isDelegateType = default;
+            return false;
+        }
+
         private bool TryGetCachedInfo(MetadataTypeReference typeReference, out CachedInfo cachedInfo)
         {
             var (assemblyName, typeName) = NameSpec.FromMetadataTypeReference(typeReference);

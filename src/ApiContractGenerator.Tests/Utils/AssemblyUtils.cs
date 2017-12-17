@@ -69,16 +69,6 @@ namespace ApiContractGenerator.Tests.Utils
             }
         }
 
-        public static string GenerateContract(string sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
-        {
-            return GenerateContract(sourceCode, new ApiContractGenerator(), languageVersion);
-        }
-
-        public static string GenerateContract(string sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion)
-        {
-            return GenerateContract(sourceCode, new ApiContractGenerator(), languageVersion);
-        }
-
         public static string GenerateContract(string sourceCode, ApiContractGenerator generator, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
         {
             using (var writer = new StringWriter())
@@ -109,7 +99,7 @@ namespace ApiContractGenerator.Tests.Utils
 
             using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => assemblyStream.CreateReadOnlyView(), assemblyResolver))
             using (var source = new MetadataReaderSource(assemblyStream, metadataReferenceResolver))
-                generator.Generate(source, new CSharpTextFormatter(writer, metadataReferenceResolver));
+                generator.Generate(source, metadataReferenceResolver, new CSharpTextFormatter(writer, metadataReferenceResolver));
 
             return writer.ToString();
         }

@@ -38,7 +38,7 @@ namespace ApiContractGenerator.MSBuild
                 using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => File.OpenRead(assemblyPath), assemblyResolver))
                 using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath), metadataReferenceResolver))
                 using (var outputFile = File.CreateText(outputPath))
-                    generator.Generate(source, new CSharpTextFormatter(outputFile, metadataReferenceResolver));
+                    generator.Generate(source, metadataReferenceResolver, new CSharpTextFormatter(outputFile, metadataReferenceResolver));
             }
 
             return true;

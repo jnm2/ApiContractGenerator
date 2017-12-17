@@ -25,6 +25,7 @@ namespace ApiContractGenerator.Tests.Integration
 
         public sealed class ContractConstraint : Constraint
         {
+            private readonly ApiContractGenerator generator = new ApiContractGenerator();
             private readonly string expected;
             private bool isVisualBasic;
 
@@ -35,6 +36,12 @@ namespace ApiContractGenerator.Tests.Integration
                     isVisualBasic = true;
                     return this;
                 }
+            }
+
+            public ContractConstraint WithIgnoredNamespace(string @namespace)
+            {
+                generator.IgnoredNamespaces.Add(@namespace);
+                return this;
             }
 
             public ContractConstraint(string expected)
@@ -48,8 +55,8 @@ namespace ApiContractGenerator.Tests.Integration
                     throw new ArgumentException("Expected source code as string.", nameof(actual));
 
                 var actualContract = isVisualBasic
-                    ? AssemblyUtils.GenerateContract(sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest)
-                    : AssemblyUtils.GenerateContract(sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest);
+                    ? AssemblyUtils.GenerateContract(sourceCode, generator, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest)
+                    : AssemblyUtils.GenerateContract(sourceCode, generator, Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest);
 
                 return new ContractConstraintResult(this, actualContract, expected);
             }

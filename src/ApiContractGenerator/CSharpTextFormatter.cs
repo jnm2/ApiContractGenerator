@@ -1148,8 +1148,23 @@ namespace ApiContractGenerator
         {
             var defaultMemberAttribute = AttributeSearch.DefaultMemberAttribute();
 
-            WriteAttributes(FilterIgnoredAttributes(AttributeSearch.Extract(metadataStruct.Attributes, defaultMemberAttribute)), currentNamespace, newLines: true);
+            var isReadOnlyAttribute = AttributeSearch.IsReadOnlyAttribute();
+            var isByRefLikeAttribute = AttributeSearch.IsByRefLikeAttribute();
+            WriteAttributes(
+                FilterIgnoredAttributes(AttributeSearch.Extract(
+                    metadataStruct.Attributes,
+                    defaultMemberAttribute,
+                    isReadOnlyAttribute,
+                    isByRefLikeAttribute,
+                    AttributeSearch.IsRefStructObsoletionMessage())),
+                currentNamespace,
+                newLines: true);
+
             WriteVisibility(metadataStruct.Visibility);
+
+            if (isReadOnlyAttribute.Result) writer.Write("readonly ");
+            if (isByRefLikeAttribute.Result) writer.Write("ref ");
+
             writer.Write("struct ");
             WriteTypeNameAndGenericSignature(metadataStruct, currentNamespace, declaringTypeNumGenericParameters);
             writer.WriteLine();

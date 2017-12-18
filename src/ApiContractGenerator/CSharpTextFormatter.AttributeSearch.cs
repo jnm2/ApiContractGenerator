@@ -55,6 +55,8 @@ namespace ApiContractGenerator
 
             public static AttributeSearch<bool> IsReadOnlyAttribute() => new SimpleAttributeSearch("System.Runtime.CompilerServices", "IsReadOnlyAttribute");
 
+            public static AttributeSearch<bool> IsByRefLikeAttribute() => new SimpleAttributeSearch("System.Runtime.CompilerServices", "IsByRefLikeAttribute");
+
             private sealed class SimpleAttributeSearch : AttributeSearch<bool>
             {
                 public SimpleAttributeSearch(string @namespace, string name) : base(@namespace, name)
@@ -83,6 +85,24 @@ namespace ApiContractGenerator
                     }
                     result = default;
                     return false;
+                }
+            }
+
+
+            public static AttributeSearch<bool> IsRefStructObsoletionMessage() => new RefStructObsoleteAttributeSearch();
+
+            private sealed class RefStructObsoleteAttributeSearch : AttributeSearch<bool>
+            {
+                public RefStructObsoleteAttributeSearch() : base("System", "ObsoleteAttribute")
+                {
+                }
+
+                protected override bool TryMatch(IMetadataAttribute attribute, out bool result)
+                {
+                    return result =
+                        attribute.FixedArguments.FirstOrDefault() is ConstantAttributeValue constant
+                        && constant.Value.TypeCode == ConstantTypeCode.String
+                        && constant.Value.GetValueAsString() == "Types with embedded references are not supported in this version of your compiler.";
                 }
             }
         }

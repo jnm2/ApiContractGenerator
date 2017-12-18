@@ -9,6 +9,6 @@ namespace ApiContractGenerator.Model.TypeReferences
 
         public IMetadataGenericTypeParameter TypeParameter { get; }
 
-        public override T Accept<T>(IMetadataTypeReferenceVisitor<T> visitor) => visitor.Accept(this);
+        public override T Accept<T>(IMetadataTypeReferenceVisitor<T> visitor) => visitor.Visit(this);
     }
 }

@@ -5,7 +5,7 @@ namespace ApiContractGenerator.Model.TypeReferences
         T Visit(ArrayTypeReference array);
         T Visit(PrimitiveTypeReference primitiveTypeReference);
         T Visit(TopLevelTypeReference topLevelTypeReference);
-        T Accept(GenericParameterTypeReference genericParameterTypeReference);
+        T Visit(GenericParameterTypeReference genericParameterTypeReference);
         T Visit(GenericInstantiationTypeReference genericInstantiationTypeReference);
         T Visit(ByRefTypeReference byRefTypeReference);
         T Visit(NestedTypeReference nestedTypeReference);

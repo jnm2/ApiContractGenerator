@@ -139,7 +139,7 @@ namespace ApiContractGenerator
                     new ImmutableNode<string>(new ImmutableNode<string>(null, topLevelTypeReference.Namespace, null), ".", name);
             }
 
-            public ImmutableNode<string> Accept(GenericParameterTypeReference genericParameterTypeReference)
+            public ImmutableNode<string> Visit(GenericParameterTypeReference genericParameterTypeReference)
             {
                 return new ImmutableNode<string>(null, genericParameterTypeReference.TypeParameter.Name, null);
             }

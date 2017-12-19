@@ -12,8 +12,8 @@
       <ApiContractAssembly Update="@(ApiContractAssembly)">
         <ResolvedAssemblyPath>$([System.IO.Path]::Combine('$(OutputPath)', '%(Identity)'))</ResolvedAssemblyPath>
         <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' != '' ">%(ApiContractAssembly.OutputPath)</ResolvedOutputPath>
-        <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' == '' and '$(TargetFramework)' != '' ">%(Filename).$(TargetFramework).pubapi.cs</ResolvedOutputPath>
-        <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' == '' and '$(TargetFramework)' == '' ">%(Filename).pubapi.cs</ResolvedOutputPath>
+        <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' == '' and '$(TargetFramework)' != '' ">..\pubapi\%(Filename).$(TargetFramework).pubapi.cs</ResolvedOutputPath>
+        <ResolvedOutputPath Condition=" '%(ApiContractAssembly.OutputPath)' == '' and '$(TargetFramework)' == '' ">..\pubapi\%(Filename).pubapi.cs</ResolvedOutputPath>
       </ApiContractAssembly>
     </ItemGroup>
   </Target>

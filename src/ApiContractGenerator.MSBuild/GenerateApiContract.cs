@@ -29,6 +29,7 @@ namespace ApiContractGenerator.MSBuild
             {
                 var assemblyPath = assembly.GetMetadata("ResolvedAssemblyPath");
                 var outputPath = assembly.GetMetadata("ResolvedOutputPath");
+                if (!string.IsNullOrEmpty(outputPath)) Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 
                 var assemblyResolver = new CompositeAssemblyReferenceResolver(
                     new GacAssemblyReferenceResolver(),

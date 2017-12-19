@@ -9,7 +9,7 @@ namespace ApiContractGenerator.Internal
     {
         private readonly TextWriter target;
         private int indent;
-        private const string IndentChars = "    ";
+        private readonly string indentChars = "    ";
         private char[] indentBuffer = Array.Empty<char>();
 
         /// <summary>
@@ -17,9 +17,10 @@ namespace ApiContractGenerator.Internal
         /// </summary>
         private bool pendingIndent = true;
 
-        public IndentedTextWriter(TextWriter target)
+        public IndentedTextWriter(TextWriter target, string indent = "    ")
         {
             this.target = target;
+            indentChars = indent ?? string.Empty;
         }
 
         public void Indent()
@@ -35,21 +36,21 @@ namespace ApiContractGenerator.Internal
 
         private char[] GetIndentBuffer()
         {
-            if (indentBuffer.Length < indent * IndentChars.Length)
+            if (indentBuffer.Length < indent * indentChars.Length)
             {
-                indentBuffer = new char[indent * IndentChars.Length];
+                indentBuffer = new char[indent * indentChars.Length];
                 for (var i = 0; i < indent; i++)
-                    IndentChars.CopyTo(0, indentBuffer, i * IndentChars.Length, IndentChars.Length);
+                    indentChars.CopyTo(0, indentBuffer, i * indentChars.Length, indentChars.Length);
             }
             return indentBuffer;
         }
         private void WriteIndent()
         {
-            target.Write(GetIndentBuffer(), 0, indent * IndentChars.Length);
+            target.Write(GetIndentBuffer(), 0, indent * indentChars.Length);
         }
         private Task WriteIndentAsync()
         {
-            return target.WriteAsync(GetIndentBuffer(), 0, indent * IndentChars.Length);
+            return target.WriteAsync(GetIndentBuffer(), 0, indent * indentChars.Length);
         }
 
         private int nextNewLineMatchPosition;

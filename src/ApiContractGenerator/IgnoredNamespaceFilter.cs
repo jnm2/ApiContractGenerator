@@ -10,7 +10,7 @@ using ApiContractGenerator.Source;
 
 namespace ApiContractGenerator
 {
-    public sealed class IgnoredNamespaceFilter : IMetadataSource
+    public sealed partial class IgnoredNamespaceFilter : IMetadataSource
     {
         private readonly IMetadataSource source;
         private readonly IEnumerable<string> ignoredNamespaces;
@@ -78,8 +78,11 @@ namespace ApiContractGenerator
                     var visitor = new ReferencedIgnoredMetadataVisitor(ignoredNamespaceLookup, metadataReferenceResolver);
 
                     foreach (var ns in includedNamespaces)
-                    foreach (var type in ns.Types)
-                        visitor.VisitNonignoredType(type);
+                    {
+                        var prefix = string.IsNullOrEmpty(ns.Name) ? null : TextNode.Root(ns.Name) + ".";
+                        foreach (var type in ns.Types)
+                            visitor.VisitNonignoredType(prefix + type.Name, type);
+                    }
 
                     foreach (var ns in visitor.ignoredNamespaces.Values)
                         if (ns.Types.Count != 0)
@@ -103,7 +106,7 @@ namespace ApiContractGenerator
                 }
             }
 
-            private void VisitNonignoredType(IMetadataType type)
+            private void VisitNonignoredType(TextNode typeName, IMetadataType type)
             {
                 // Types should not be brought in via interface implementations;
                 // if interface implementations are the only thing bringing it in, that requires naming the ignored type.
@@ -112,10 +115,33 @@ namespace ApiContractGenerator
                 // they'll be picked up in an output position already by VisitTypeReference.
 
                 foreach (var field in type.Fields)
-                    VisitTypeReference(field.FieldType);
+                    VisitTypeReference((typeName + ".") + field.Name, field.FieldType);
+
+                var @delegate = type as IMetadataDelegate;
+                if (@delegate != null)
+                {
+                    // Delegate parameters don't require naming the ignored type in order to receive values from them.
+                    // when passing the delegate as a parameter.
+                    foreach (var parameter in @delegate.Parameters)
+                        VisitTypeReference((typeName + " parameter ") + parameter.Name, parameter.ParameterType);
+
+                    // Delegate returns don't require naming the ignored type in order to receive values from them
+                    // when invoking them.
+                    VisitTypeReference(typeName + " return type", @delegate.ReturnType);
+                }
 
                 foreach (var method in type.Methods) // Covers constructors, operators, properties and events
                 {
+                    if (@delegate != null && (
+                        method.Name == "Invoke"
+                        || method.Name == "BeginInvoke"
+                        || method.Name == "EndInvoke"))
+                    {
+                        continue;
+                    }
+
+                    var methodName = (typeName + ".") + method.Name;
+
                     foreach (var parameter in method.Parameters)
                     {
                         if (parameter.IsOut // Out var
@@ -124,42 +150,30 @@ namespace ApiContractGenerator
                                     || isDelegate))) // Delegate parameter types can be syntactically inferred, so ignored types could be used without naming them
                         {
                             // For delegates we could be even smarter and skip if it has no byval parameters. Future enhancement.
-                            VisitTypeReference(parameter.ParameterType);
+                            VisitTypeReference((methodName + " parameter ") + parameter.Name, parameter.ParameterType);
                         }
 
                         // Otherwise, types should not be brought in via method parameters;
                         // if method parameters are the only thing bringing it in, that requires naming the ignored type.
                     }
 
-                    VisitTypeReference(method.ReturnType);
+                    VisitTypeReference(methodName + " return type", method.ReturnType);
                 }
 
-                if (type.BaseType != null) VisitTypeReference(type.BaseType);
-
-                if (type is IMetadataDelegate @delegate)
-                {
-                    // Delegate parameters don't require naming the ignored type in order to receive values from them.
-                    // when passing the delegate as a parameter.
-                    foreach (var parameter in @delegate.Parameters)
-                        VisitTypeReference(parameter.ParameterType);
-
-                    // Delegate returns don't require naming the ignored type in order to receive values from them
-                    // when invoking them.
-                    VisitTypeReference(@delegate.ReturnType);
-                }
+                if (type.BaseType != null) VisitTypeReference(typeName + " base type", type.BaseType);
 
                 foreach (var nestedType in type.NestedTypes)
-                    VisitNonignoredType(nestedType);
+                    VisitNonignoredType((typeName + ".") + nestedType.Name, nestedType);
             }
 
-            private void VisitTypeReference(MetadataTypeReference type)
+            private void VisitTypeReference(TextNode referencePath, MetadataTypeReference type)
             {
                 for (;;)
                 {
                     switch (type)
                     {
                         case TopLevelTypeReference topLevel:
-                            VisitTypeName(topLevel.Namespace, topLevel.Name, Array.Empty<string>());
+                            VisitTypeName(referencePath, topLevel.Namespace, topLevel.Name, Array.Empty<string>());
                             return;
 
                         case NestedTypeReference nested:
@@ -174,14 +188,14 @@ namespace ApiContractGenerator
                                 {
                                     var topLevel = (TopLevelTypeReference)nested.DeclaringType;
                                     nestedNames.Reverse();
-                                    VisitTypeName(topLevel.Namespace, topLevel.Name, nestedNames);
+                                    VisitTypeName(referencePath, topLevel.Namespace, topLevel.Name, nestedNames);
                                     return;
                                 }
                             }
 
                         case GenericInstantiationTypeReference genericInstantiation:
                             foreach (var argument in genericInstantiation.GenericTypeArguments)
-                                VisitTypeReference(argument);
+                                VisitTypeReference(referencePath, argument);
                             type = genericInstantiation.TypeDefinition;
                             continue;
 
@@ -199,7 +213,7 @@ namespace ApiContractGenerator
 
                         case GenericParameterTypeReference genericParameter:
                             foreach (var constraint in genericParameter.TypeParameter.TypeConstraints)
-                                VisitTypeReference(constraint);
+                                VisitTypeReference(referencePath + " generic constraint", constraint);
                             return;
 
                         case PrimitiveTypeReference _:
@@ -211,12 +225,19 @@ namespace ApiContractGenerator
                 }
             }
 
-            private void VisitTypeName(string @namespace, string topLevelName, IReadOnlyList<string> nestedNames)
+            private void VisitTypeName(TextNode referencePath, string @namespace, string topLevelName, IReadOnlyList<string> nestedNames)
             {
                 if (ignoredNamespaces.TryGetValue(@namespace, out var builder)
-                    && builder.TryUnignore(topLevelName, nestedNames, out var unignoredType))
+                    && builder.TryUnignore(referencePath, topLevelName, nestedNames, out var unignoredType))
                 {
-                    VisitNonignoredType(unignoredType);
+                    var typeName = !string.IsNullOrEmpty(@namespace)
+                        ? (TextNode.Root(@namespace) + ".") + topLevelName
+                        : TextNode.Root(topLevelName);
+
+                    foreach (var name in nestedNames)
+                        typeName = (typeName + ".") + name;
+
+                    VisitNonignoredType(typeName, unignoredType);
                 }
             }
 
@@ -237,7 +258,7 @@ namespace ApiContractGenerator
                 /// <summary>
                 /// Returns <see langword="false"/> if the type is not found or if it has already been unignored.
                 /// </summary>
-                public bool TryUnignore(string topLevelName, IReadOnlyList<string> nestedNames, out IMetadataType unignoredType)
+                public bool TryUnignore(TextNode referencePath, string topLevelName, IReadOnlyList<string> nestedNames, out IMetadataType unignoredType)
                 {
                     var current = originalNamespace.Types.FirstOrDefault(_ => _.Name == topLevelName);
                     if (current != null)
@@ -246,10 +267,9 @@ namespace ApiContractGenerator
                         {
                             var builder = typeBuilders.FirstOrDefault(_ => _.Name == topLevelName);
                             if (builder == null)
-                            {
-                                typeBuilders.Add(PartiallyIgnoredTypeBuilder.Create(current, asDeclaringNameOnly: false));
-                            }
-                            else if (!builder.TryUnignore())
+                                typeBuilders.Add(builder = PartiallyIgnoredTypeBuilder.Create(current));
+
+                            if (!builder.TryUnignore(referencePath))
                             {
                                 unignoredType = null;
                                 return false;
@@ -274,9 +294,9 @@ namespace ApiContractGenerator
 
                             var builder = typeBuilders.FirstOrDefault(_ => _.Name == topLevelName);
                             if (builder == null)
-                                typeBuilders.Add(builder = PartiallyIgnoredTypeBuilder.Create(parentTypes[0], asDeclaringNameOnly: true));
+                                typeBuilders.Add(builder = PartiallyIgnoredTypeBuilder.Create(parentTypes[0]));
 
-                            if (builder.TryUnignoreNested(parentTypes, 0, current))
+                            if (builder.TryUnignoreNested(referencePath, parentTypes, 0, current))
                             {
                                 unignoredType = current;
                                 return true;
@@ -293,29 +313,28 @@ namespace ApiContractGenerator
             {
                 private readonly IMetadataType original;
                 private readonly List<PartiallyIgnoredTypeBuilder> nestedTypeBuilders = new List<PartiallyIgnoredTypeBuilder>();
+                private readonly List<TextNode> referencePaths = new List<TextNode>();
+                private bool asDeclaringNameOnly = true;
 
-                private bool asDeclaringNameOnly;
-
-                private PartiallyIgnoredTypeBuilder(IMetadataType original, bool asDeclaringNameOnly)
+                private PartiallyIgnoredTypeBuilder(IMetadataType original)
                 {
                     this.original = original;
-                    this.asDeclaringNameOnly = asDeclaringNameOnly;
                 }
 
-                public static PartiallyIgnoredTypeBuilder Create(IMetadataType original, bool asDeclaringNameOnly)
+                public static PartiallyIgnoredTypeBuilder Create(IMetadataType original)
                 {
                     switch (original)
                     {
                         case IMetadataClass @class:
-                            return new PartiallyIgnoredClassBuilder(@class, asDeclaringNameOnly);
+                            return new PartiallyIgnoredClassBuilder(@class);
                         case IMetadataStruct @struct:
-                            return new PartiallyIgnoredStructBuilder(@struct, asDeclaringNameOnly);
+                            return new PartiallyIgnoredStructBuilder(@struct);
                         case IMetadataInterface @interface:
-                            return new PartiallyIgnoredInterfaceBuilder(@interface, asDeclaringNameOnly);
+                            return new PartiallyIgnoredInterfaceBuilder(@interface);
                         case IMetadataEnum @enum:
-                            return new PartiallyIgnoredEnumBuilder(@enum, asDeclaringNameOnly);
+                            return new PartiallyIgnoredEnumBuilder(@enum);
                         case IMetadataDelegate @delegate:
-                            return new PartiallyIgnoredDelegateBuilder(@delegate, asDeclaringNameOnly);
+                            return new PartiallyIgnoredDelegateBuilder(@delegate);
                         default:
                             throw new NotImplementedException();
                     }
@@ -323,7 +342,7 @@ namespace ApiContractGenerator
 
                 private sealed class PartiallyIgnoredClassBuilder : PartiallyIgnoredTypeBuilder, IMetadataClass
                 {
-                    public PartiallyIgnoredClassBuilder(IMetadataClass original, bool asDeclaringNameOnly) : base(original, asDeclaringNameOnly)
+                    public PartiallyIgnoredClassBuilder(IMetadataClass original) : base(original)
                     {
                     }
 
@@ -334,21 +353,21 @@ namespace ApiContractGenerator
 
                 private sealed class PartiallyIgnoredStructBuilder : PartiallyIgnoredTypeBuilder, IMetadataStruct
                 {
-                    public PartiallyIgnoredStructBuilder(IMetadataStruct original, bool asDeclaringNameOnly) : base(original, asDeclaringNameOnly)
+                    public PartiallyIgnoredStructBuilder(IMetadataStruct original) : base(original)
                     {
                     }
                 }
 
                 private sealed class PartiallyIgnoredInterfaceBuilder : PartiallyIgnoredTypeBuilder, IMetadataInterface
                 {
-                    public PartiallyIgnoredInterfaceBuilder(IMetadataInterface original, bool asDeclaringNameOnly) : base(original, asDeclaringNameOnly)
+                    public PartiallyIgnoredInterfaceBuilder(IMetadataInterface original) : base(original)
                     {
                     }
                 }
 
                 private sealed class PartiallyIgnoredEnumBuilder : PartiallyIgnoredTypeBuilder, IMetadataEnum
                 {
-                    public PartiallyIgnoredEnumBuilder(IMetadataEnum original, bool asDeclaringNameOnly) : base(original, asDeclaringNameOnly)
+                    public PartiallyIgnoredEnumBuilder(IMetadataEnum original) : base(original)
                     {
                     }
 
@@ -357,7 +376,7 @@ namespace ApiContractGenerator
 
                 private sealed class PartiallyIgnoredDelegateBuilder : PartiallyIgnoredTypeBuilder, IMetadataDelegate
                 {
-                    public PartiallyIgnoredDelegateBuilder(IMetadataDelegate original, bool asDeclaringNameOnly) : base(original, asDeclaringNameOnly)
+                    public PartiallyIgnoredDelegateBuilder(IMetadataDelegate original) : base(original)
                     {
                     }
 
@@ -367,14 +386,39 @@ namespace ApiContractGenerator
                 }
 
 
-                public bool TryUnignore()
+
+                public string Comment
                 {
+                    get
+                    {
+                        if (asDeclaringNameOnly) return null;
+
+                        var comment = new StringBuilder();
+                        if (!string.IsNullOrWhiteSpace(original.Comment)) comment.AppendLine(original.Comment);
+
+                        comment.Append("Warning; type cannot be ignored because it is referenced by:");
+                        foreach (var path in referencePaths)
+                        {
+                            comment.AppendLine();
+                            comment.Append(" - ");
+                            foreach (var segment in TextNode.ToArray(path))
+                                comment.Append(segment);
+                        }
+
+                        return comment.ToString();
+                    }
+                }
+
+                public bool TryUnignore(TextNode referencePath)
+                {
+                    referencePaths.Add(referencePath ?? throw new ArgumentNullException(nameof(referencePath)));
+
                     if (!asDeclaringNameOnly) return false;
                     asDeclaringNameOnly = false;
                     return true;
                 }
 
-                public bool TryUnignoreNested(IReadOnlyList<IMetadataType> parentTypes, int parentIndex, IMetadataType typeToUnignore)
+                public bool TryUnignoreNested(TextNode referencePath, IReadOnlyList<IMetadataType> parentTypes, int parentIndex, IMetadataType typeToUnignore)
                 {
                     var nextParentIndex = parentIndex + 1;
                     if (nextParentIndex != parentTypes.Count)
@@ -383,19 +427,17 @@ namespace ApiContractGenerator
 
                         var builder = nestedTypeBuilders.FirstOrDefault(_ => _.Name == nextParent.Name);
                         if (builder == null)
-                            nestedTypeBuilders.Add(builder = Create(nextParent, asDeclaringNameOnly: true));
+                            nestedTypeBuilders.Add(builder = Create(nextParent));
 
-                        return builder.TryUnignoreNested(parentTypes, nextParentIndex, typeToUnignore);
+                        return builder.TryUnignoreNested(referencePath, parentTypes, nextParentIndex, typeToUnignore);
                     }
                     else
                     {
                         var builder = nestedTypeBuilders.FirstOrDefault(_ => _.Name == typeToUnignore.Name);
                         if (builder == null)
-                        {
-                            nestedTypeBuilders.Add(Create(typeToUnignore, asDeclaringNameOnly: false));
-                            return true;
-                        }
-                        return builder.TryUnignore();
+                            nestedTypeBuilders.Add(builder = Create(typeToUnignore));
+
+                        return builder.TryUnignore(referencePath);
                     }
                 }
 

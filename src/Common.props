@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Product>ApiContractGenerator</Product>
-    <Version>1.0.0-alpha</Version>
+    <Version>1.0.0-rc.1</Version>
     <Authors>jnm2</Authors>
     <Copyright>Copyright © 2017 Joseph Musser</Copyright>
   </PropertyGroup>

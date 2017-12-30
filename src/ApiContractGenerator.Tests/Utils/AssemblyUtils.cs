@@ -22,9 +22,11 @@ namespace ApiContractGenerator.Tests.Utils
             MetadataReference.CreateFromFile(typeof(System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute).GetTypeInfo().Assembly.Location)
         };
 
+        public static string EmittedAssemblyName { get; } = $"{typeof(AssemblyUtils).FullName}.{nameof(EmitCompilation)}";
+
         private static readonly Lazy<CSharpCompilation> BaseCSharpCompilation = new Lazy<CSharpCompilation>(() =>
             CSharpCompilation.Create(
-                assemblyName: $"{typeof(AssemblyUtils).FullName}.{nameof(EmitCompilation)}",
+                EmittedAssemblyName,
                 options: new CSharpCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary,
                     optimizationLevel: OptimizationLevel.Release,
@@ -33,7 +35,7 @@ namespace ApiContractGenerator.Tests.Utils
 
         private static readonly Lazy<VisualBasicCompilation> BaseVisualBasicCompilation = new Lazy<VisualBasicCompilation>(() =>
             VisualBasicCompilation.Create(
-                assemblyName: $"{typeof(AssemblyUtils).FullName}.{nameof(EmitCompilation)}",
+                EmittedAssemblyName,
                 options: new VisualBasicCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary,
                     optimizationLevel: OptimizationLevel.Release),

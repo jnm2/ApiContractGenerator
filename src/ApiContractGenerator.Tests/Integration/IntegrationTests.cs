@@ -38,6 +38,15 @@ namespace ApiContractGenerator.Tests.Integration
                 }
             }
 
+            public ContractConstraint IncludeAssemblyMetadata
+            {
+                get
+                {
+                    generator.WriteAssemblyMetadata = true;
+                    return this;
+                }
+            }
+
             public ContractConstraint WithIgnoredNamespace(string @namespace)
             {
                 generator.IgnoredNamespaces.Add(@namespace);

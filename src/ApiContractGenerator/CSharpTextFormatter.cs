@@ -52,7 +52,9 @@ namespace ApiContractGenerator
                 writer.Write("// Name:       ");
                 writer.WriteLine(metadataSource.AssemblyName);
                 writer.Write("// Public key: ");
-                if (metadataSource.PublicKey != null) writer.WriteLine(Convert.ToBase64String(metadataSource.PublicKey));
+                writer.WriteLine(metadataSource.PublicKey == null ? "(none)" :
+                    Convert.ToBase64String(metadataSource.PublicKey));
+
                 WriteLineSpacing();
             }
 

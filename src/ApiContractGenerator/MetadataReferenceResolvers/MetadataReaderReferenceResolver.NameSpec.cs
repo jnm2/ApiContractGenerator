@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 using ApiContractGenerator.Model.TypeReferences;
 
@@ -23,7 +22,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 this.nestedNames = nestedNames != null && nestedNames.Length != 0 ? nestedNames : null;
             }
 
-            public static (AssemblyName assemblyName, NameSpec typeName) FromMetadataTypeReference(MetadataTypeReference typeReference)
+            public static (MetadataAssemblyReference assemblyReference, NameSpec typeName) FromMetadataTypeReference(MetadataTypeReference typeReference)
             {
                 if (typeReference is GenericInstantiationTypeReference genericInstantiation)
                     typeReference = genericInstantiation.TypeDefinition;

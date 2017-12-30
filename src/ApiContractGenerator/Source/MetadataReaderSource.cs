@@ -119,14 +119,14 @@ namespace ApiContractGenerator.Source
                 type = reader.GetTypeReference((TypeReferenceHandle)type.ResolutionScope);
             }
 
-            AssemblyName assemblyName;
+            MetadataAssemblyReference assemblyReference;
             switch (type.ResolutionScope.Kind)
             {
                 case HandleKind.ModuleReference:
-                    assemblyName = null;
+                    assemblyReference = null;
                     break;
                 case HandleKind.AssemblyReference:
-                    assemblyName = reader.GetAssemblyReference((AssemblyReferenceHandle)type.ResolutionScope)
+                    assemblyReference = reader.GetAssemblyReference((AssemblyReferenceHandle)type.ResolutionScope)
                         .GetAssemblyName(reader);
                     break;
                 default:
@@ -134,7 +134,7 @@ namespace ApiContractGenerator.Source
             }
 
             MetadataTypeReference current = new TopLevelTypeReference(
-                assemblyName,
+                assemblyReference,
                 reader.GetString(type.Namespace),
                 reader.GetString(type.Name));
 

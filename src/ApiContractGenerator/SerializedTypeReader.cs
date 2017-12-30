@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using ApiContractGenerator.Internal;
 using ApiContractGenerator.Model.TypeReferences;
 
@@ -159,7 +158,7 @@ namespace ApiContractGenerator
             var topLevelTypeName = topLevelName.Slice(namespaceEndSplit + 1).ToString();
 
             MetadataTypeReference current = new TopLevelTypeReference(
-                assemblyName.Length == 0 ? null : new AssemblyName(assemblyName.ToString()),
+                assemblyName.Length == 0 ? null : MetadataAssemblyReference.FromFullName(assemblyName.ToString()),
                 topLevelNamespace,
                 topLevelTypeName);
 

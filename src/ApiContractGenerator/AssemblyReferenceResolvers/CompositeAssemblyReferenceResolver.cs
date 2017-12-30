@@ -1,5 +1,5 @@
 using System;
-using System.Reflection;
+using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.AssemblyReferenceResolvers
 {
@@ -12,10 +12,10 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
             this.resolvers = resolvers ?? throw new ArgumentNullException(nameof(resolvers));
         }
 
-        public bool TryGetAssemblyPath(AssemblyName assemblyName, out string path)
+        public bool TryGetAssemblyPath(MetadataAssemblyReference assemblyReference, out string path)
         {
             foreach (var resolver in resolvers)
-                if (resolver.TryGetAssemblyPath(assemblyName, out path))
+                if (resolver.TryGetAssemblyPath(assemblyReference, out path))
                     return true;
 
             path = null;

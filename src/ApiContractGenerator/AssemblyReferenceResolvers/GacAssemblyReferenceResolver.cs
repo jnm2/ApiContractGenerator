@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.AssemblyReferenceResolvers
 {
@@ -9,9 +10,9 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
         private IAssemblyCache globalAssemblyCache;
         private bool fusionNotAvailable;
 
-        public bool TryGetAssemblyPath(AssemblyName assemblyName, out string path)
+        public bool TryGetAssemblyPath(MetadataAssemblyReference assemblyReference, out string path)
         {
-            if (fusionNotAvailable || assemblyName?.Version == null || assemblyName.GetPublicKeyToken() == null)
+            if (fusionNotAvailable || assemblyReference?.Version == null || assemblyReference.PublicKeyToken == null)
             {
                 path = null;
                 return false;
@@ -19,7 +20,7 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
 
             try
             {
-                if (TryLocate(assemblyName.FullName, out path))
+                if (TryLocate(assemblyReference.FullName, out path))
                     return true;
             }
             catch (Exception ex) when (
@@ -32,9 +33,9 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
             }
 
             // Ran into this
-            if (assemblyName.CultureName == string.Empty)
+            if (assemblyReference.CultureName == string.Empty)
             {
-                var withoutCultureNeutral = new AssemblyName(assemblyName.FullName)
+                var withoutCultureNeutral = new AssemblyName(assemblyReference.FullName)
                 {
                     CultureName = null
                 };

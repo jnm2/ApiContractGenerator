@@ -1,5 +1,7 @@
+using System;
 using System.Reflection;
 using System.Reflection.Metadata;
+using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator
 {
@@ -7,27 +9,63 @@ namespace ApiContractGenerator
     // This is fine so long as the class itself is internal.
     internal static class Extensions
     {
-        // See https://github.com/dotnet/corefx/issues/13295 and
-        // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/src/System/Reflection/Metadata/MetadataReader.netstandard.cs
-        public static AssemblyName GetAssemblyName(this AssemblyReference reference, MetadataReader reader)
+        public static MetadataAssemblyReference GetAssemblyName(this AssemblyReference reference, MetadataReader reader)
         {
-            var flags = reference.Flags;
-            var assemblyName = new AssemblyName(reader.GetString(reference.Name))
+            return new ReaderMetadataAssemblyReference(
+                reader.GetString(reference.Name),
+                reference.Version,
+                reference.Culture.IsNil ? null : reader.GetString(reference.Culture),
+                reference.PublicKeyOrToken.IsNil ? null : reader.GetBlobBytes(reference.PublicKeyOrToken),
+                reference.Flags);
+        }
+
+        private sealed class ReaderMetadataAssemblyReference : MetadataAssemblyReference
+        {
+            public override string Name { get; }
+            public override Version Version { get; }
+            public override string CultureName { get; }
+
+            private readonly byte[] publicKeyOrToken;
+            private readonly AssemblyFlags flags;
+
+            private AssemblyName parsed;
+
+            public ReaderMetadataAssemblyReference(string name, Version version, string cultureName, byte[] publicKeyOrToken, AssemblyFlags flags)
             {
-                Version = reference.Version,
-                CultureName = reference.Culture.IsNil ? null : reader.GetString(reference.Culture),
-                Flags = (AssemblyNameFlags)(reference.Flags & (AssemblyFlags.PublicKey | AssemblyFlags.Retargetable | AssemblyFlags.EnableJitCompileTracking | AssemblyFlags.DisableJitCompileOptimizer)),
-                ContentType = (AssemblyContentType)((int)(flags & AssemblyFlags.ContentTypeMask) >> 9)
-            };
+                Name = name;
+                Version = version;
+                CultureName = cultureName;
+                this.publicKeyOrToken = publicKeyOrToken;
+                this.flags = flags;
+            }
 
-            var publicKeyOrToken = reference.PublicKeyOrToken.IsNil ? null : reader.GetBlobBytes(reference.PublicKeyOrToken);
+            private AssemblyName GetParsed()
+            {
+                if (parsed == null)
+                {
+                    parsed = new AssemblyName
+                    {
+                        Name = Name,
+                        Version = Version,
+                        Flags = (AssemblyNameFlags)(flags & (AssemblyFlags.PublicKey | AssemblyFlags.Retargetable | AssemblyFlags.EnableJitCompileTracking | AssemblyFlags.DisableJitCompileOptimizer)),
+                        ContentType = (AssemblyContentType)((int)(flags & AssemblyFlags.ContentTypeMask) >> 9)
+                    };
 
-            if ((flags & AssemblyFlags.PublicKey) != 0)
-                assemblyName.SetPublicKey(publicKeyOrToken);
-            else
-                assemblyName.SetPublicKeyToken(publicKeyOrToken);
+                    if (CultureName != null) parsed.CultureName = CultureName;
 
-            return assemblyName;
+                    if (IsPublicKey)
+                        parsed.SetPublicKey(publicKeyOrToken);
+                    else
+                        parsed.SetPublicKeyToken(publicKeyOrToken);
+                }
+                return parsed;
+            }
+
+            private bool IsPublicKey => (flags & AssemblyFlags.PublicKey) != 0;
+
+            public override byte[] PublicKeyToken => IsPublicKey ? GetParsed().GetPublicKeyToken() : publicKeyOrToken;
+
+            public override string FullName => GetParsed().FullName;
         }
     }
 }

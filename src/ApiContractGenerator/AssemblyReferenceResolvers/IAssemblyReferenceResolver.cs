@@ -1,9 +1,9 @@
-using System.Reflection;
+using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.AssemblyReferenceResolvers
 {
     public interface IAssemblyReferenceResolver
     {
-        bool TryGetAssemblyPath(AssemblyName assemblyName, out string path);
+        bool TryGetAssemblyPath(MetadataAssemblyReference assemblyReference, out string path);
     }
 }

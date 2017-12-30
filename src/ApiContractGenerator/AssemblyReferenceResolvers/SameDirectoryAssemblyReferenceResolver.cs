@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using System.Reflection;
+using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.AssemblyReferenceResolvers
 {
@@ -13,11 +13,11 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
             this.baseDirectory = baseDirectory ?? throw new ArgumentNullException(nameof(baseDirectory));
         }
 
-        public bool TryGetAssemblyPath(AssemblyName assemblyName, out string path)
+        public bool TryGetAssemblyPath(MetadataAssemblyReference assemblyReference, out string path)
         {
-            if (assemblyName != null)
+            if (assemblyReference != null)
             {
-                var baseDirectoryPath = Path.Combine(baseDirectory, assemblyName.Name + ".dll");
+                var baseDirectoryPath = Path.Combine(baseDirectory, assemblyReference.Name + ".dll");
 
                 if (File.Exists(baseDirectoryPath))
                 {

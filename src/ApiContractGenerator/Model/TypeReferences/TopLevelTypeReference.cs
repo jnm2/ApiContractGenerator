@@ -1,14 +1,12 @@
-using System.Reflection;
-
 namespace ApiContractGenerator.Model.TypeReferences
 {
     public sealed class TopLevelTypeReference : MetadataTypeReference
     {
-        public AssemblyName Assembly { get; }
+        public MetadataAssemblyReference Assembly { get; }
         public string Namespace { get; }
         public string Name { get; }
 
-        public TopLevelTypeReference(AssemblyName assembly, string @namespace, string name)
+        public TopLevelTypeReference(MetadataAssemblyReference assembly, string @namespace, string name)
         {
             Assembly = assembly;
             Namespace = @namespace;

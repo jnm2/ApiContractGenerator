@@ -19,5 +19,27 @@ namespace ApiContractGenerator.Tests.Integration
                 "    }",
                 "}"));
         }
+
+        [TestCase("void")]
+        [TestCase("bool")]
+        [TestCase("char")]
+        [TestCase("byte")]
+        [TestCase("sbyte")]
+        [TestCase("short")]
+        [TestCase("ushort")]
+        [TestCase("int")]
+        [TestCase("uint")]
+        [TestCase("long")]
+        [TestCase("ulong")]
+        [TestCase("float")]
+        [TestCase("double")]
+        [TestCase("decimal")]
+        [TestCase("string")]
+        [TestCase("object")]
+        public static void Built_in_data_types(string keyword)
+        {
+            Assert.That("public delegate " + keyword + " X();", HasContract(
+                "public delegate " + keyword + " X();"));
+        }
     }
 }

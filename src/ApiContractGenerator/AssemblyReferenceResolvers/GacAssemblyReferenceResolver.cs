@@ -22,7 +22,9 @@ namespace ApiContractGenerator.AssemblyReferenceResolvers
                 if (TryLocate(assemblyName.FullName, out path))
                     return true;
             }
-            catch (DllNotFoundException)
+            catch (Exception ex) when (
+                ex is DllNotFoundException // CoreCLR
+                || ex is MarshalDirectiveException) // Mono
             {
                 fusionNotAvailable = true;
                 path = null;

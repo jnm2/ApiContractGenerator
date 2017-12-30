@@ -51,6 +51,8 @@ namespace ApiContractGenerator
                 Literal("object")
             };
 
+            private static readonly ImmutableNode<string> DecimalPrimitiveType = Literal("decimal");
+
             public ImmutableNode<string> Visit(PrimitiveTypeReference primitiveTypeReference)
             {
                 return PrimitiveTypesByCode[(int)primitiveTypeReference.Code];
@@ -128,6 +130,8 @@ namespace ApiContractGenerator
                             return PrimitiveTypesByCode[(int)PrimitiveTypeCode.String];
                         case "Object":
                             return PrimitiveTypesByCode[(int)PrimitiveTypeCode.Object];
+                        case "Decimal":
+                            return DecimalPrimitiveType;
                     }
                 }
                 return AddNamespace(topLevelTypeReference, BuildNameWithArity(topLevelTypeReference.Name));

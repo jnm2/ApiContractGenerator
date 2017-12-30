@@ -98,8 +98,8 @@ namespace ApiContractGenerator.Tests.Integration
                 "}"));
         }
 
-        [TestCase("decimal x = 0", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 0), System.Runtime.InteropServices.Optional] System.Decimal x")]
-        [TestCase("decimal x = 1", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 1), System.Runtime.InteropServices.Optional] System.Decimal x")]
+        [TestCase("decimal x = 0", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 0), System.Runtime.InteropServices.Optional] decimal x")]
+        [TestCase("decimal x = 1", "[System.Runtime.CompilerServices.DecimalConstant(0, 0, 0, 0, 1), System.Runtime.InteropServices.Optional] decimal x")]
         public static void Decimal_default_value_is_shown_as_non_constant(string source, string api)
         {
             Assert.That("public interface ITest { void Method(" + source + "); }", HasContract(

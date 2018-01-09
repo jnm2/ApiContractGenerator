@@ -71,23 +71,29 @@ namespace ApiContractGenerator.Tests.Utils
             }
         }
 
-        public static string GenerateContract(string sourceCode, ApiContractGenerator generator, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
+        public static string GenerateContract(ApiContractGenerator generator, MemoryStream peStream)
         {
             using (var writer = new StringWriter())
-            using (var stream = new MemoryStream())
             {
-                EmitCompilation(sourceCode, stream, languageVersion);
-                return GenerateContract(generator, writer, stream);
+                return GenerateContract(generator, writer, peStream);
             }
         }
 
-        public static string GenerateContract(string sourceCode, ApiContractGenerator generator, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion)
+        public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
         {
-            using (var writer = new StringWriter())
             using (var stream = new MemoryStream())
             {
                 EmitCompilation(sourceCode, stream, languageVersion);
-                return GenerateContract(generator, writer, stream);
+                return GenerateContract(generator, stream);
+            }
+        }
+
+        public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion)
+        {
+            using (var stream = new MemoryStream())
+            {
+                EmitCompilation(sourceCode, stream, languageVersion);
+                return GenerateContract(generator, stream);
             }
         }
 

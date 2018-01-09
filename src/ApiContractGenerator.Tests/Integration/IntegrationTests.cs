@@ -1,4 +1,9 @@
 using System;
+using System.IO;
+using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.Metadata.Ecma335;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using ApiContractGenerator.Tests.Utils;
 using NUnit.Framework.Constraints;
@@ -60,12 +65,32 @@ namespace ApiContractGenerator.Tests.Integration
 
             public override ConstraintResult ApplyTo<TActual>(TActual actual)
             {
-                if (!((object)actual is string sourceCode))
-                    throw new ArgumentException("Expected source code as string.", nameof(actual));
+                string actualContract;
+                switch (actual)
+                {
+                    case string sourceCode:
+                        actualContract = isVisualBasic
+                            ? AssemblyUtils.GenerateContract(generator, sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest)
+                            : AssemblyUtils.GenerateContract(generator, sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest);
+                        break;
 
-                var actualContract = isVisualBasic
-                    ? AssemblyUtils.GenerateContract(sourceCode, generator, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest)
-                    : AssemblyUtils.GenerateContract(sourceCode, generator, Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest);
+                    case MetadataBuilder metadataBuilder:
+                        var blobBuilder = new BlobBuilder();
+
+                        var peBuilder = new ManagedPEBuilder(
+                            PEHeaderBuilder.CreateLibraryHeader(),
+                            new MetadataRootBuilder(metadataBuilder),
+                            ilStream: new BlobBuilder());
+
+                        peBuilder.Serialize(blobBuilder);
+
+                        using (var stream = new MemoryStream(blobBuilder.ToArray(), writable: false))
+                            actualContract = AssemblyUtils.GenerateContract(generator, stream);
+                        break;
+
+                    default:
+                        throw new ArgumentException("Expected source code as string or library IL as MetadataBuilder.", nameof(actual));
+                }
 
                 return new ContractConstraintResult(this, actualContract, expected);
             }
@@ -87,6 +112,30 @@ namespace ApiContractGenerator.Tests.Integration
                     writer.WriteLine(((string)ActualValue).Replace(Environment.NewLine, "↵"));
                 }
             }
+        }
+
+        protected static MetadataBuilder BuildAssembly()
+        {
+            var builder = new MetadataBuilder();
+
+            var assemblyNameHandle = builder.GetOrAddString(AssemblyUtils.EmittedAssemblyName);
+
+            builder.AddAssembly(
+                assemblyNameHandle,
+                version: new Version(),
+                culture: default,
+                publicKey: default,
+                flags: default,
+                hashAlgorithm: AssemblyHashAlgorithm.None);
+
+            builder.AddModule(
+                generation: 0,
+                moduleName: assemblyNameHandle,
+                mvid: default,
+                encId: default,
+                encBaseId: default);
+
+            return builder;
         }
     }
 }

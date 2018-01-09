@@ -47,7 +47,7 @@ namespace ApiContractGenerator
                     {
                         Name = Name,
                         Version = Version,
-                        Flags = (AssemblyNameFlags)(flags & (AssemblyFlags.PublicKey | AssemblyFlags.Retargetable | AssemblyFlags.EnableJitCompileTracking | AssemblyFlags.DisableJitCompileOptimizer)),
+                        Flags = (AssemblyNameFlags)(flags & AssemblyFlags.PublicKey),
                         ContentType = (AssemblyContentType)((int)(flags & AssemblyFlags.ContentTypeMask) >> 9)
                     };
 

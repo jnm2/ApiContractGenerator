@@ -30,5 +30,14 @@ namespace ApiContractGenerator.Tests.Integration
                 "{",
                 "}"));
         }
+
+        [Test]
+        public static void Struct_implementing_interface()
+        {
+            Assert.That("using System.Collections; public struct Test : IEnumerable { IEnumerator IEnumerable.GetEnumerator() => default; }", HasContract(
+                "public struct Test : System.Collections.IEnumerable",
+                "{",
+                "}"));
+        }
     }
 }

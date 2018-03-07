@@ -227,5 +227,15 @@ namespace ApiContractGenerator.Tests.Integration
                 "{",
                 "}"));
         }
+
+        [Test]
+        public static void Class_implementing_interface()
+        {
+            Assert.That("using System.Collections; public class Test : IEnumerable { IEnumerator IEnumerable.GetEnumerator() => default; }", HasContract(
+                "public class Test : System.Collections.IEnumerable",
+                "{",
+                "    public Test();",
+                "}"));
+        }
     }
 }

@@ -1070,23 +1070,18 @@ namespace ApiContractGenerator
             writer.WriteLine('}');
         }
 
-        private void WriteBaseTypeAndInterfaces(IMetadataType metadataType, string currentNamespace)
+        private void WriteBaseTypeAndInterfaces(MetadataTypeReference baseType, IReadOnlyList<MetadataTypeReference> interfaceImplementations, string currentNamespace)
         {
             var didWriteColon = false;
 
-            if (metadataType.BaseType != null
-                && !(
-                    metadataType is IMetadataClass
-                    && metadataType.BaseType is TopLevelTypeReference topLevel
-                    && topLevel.Namespace == "System"
-                    && topLevel.Name == "Object"))
+            if (baseType != null)
             {
                 writer.Write(" : ");
                 didWriteColon = true;
-                Write(metadataType.BaseType, currentNamespace);
+                Write(baseType, currentNamespace);
             }
 
-            foreach (var interfaceImplementation in metadataType.InterfaceImplementations)
+            foreach (var interfaceImplementation in interfaceImplementations)
             {
                 if (!didWriteColon)
                 {
@@ -1150,7 +1145,15 @@ namespace ApiContractGenerator
 
             writer.Write("class ");
             WriteTypeNameAndGenericSignature(metadataClass, currentNamespace, declaringTypeNumGenericParameters);
-            WriteBaseTypeAndInterfaces(metadataClass, currentNamespace);
+
+            var isSystemObject = metadataClass.BaseType is TopLevelTypeReference topLevel
+                && topLevel.Namespace == "System"
+                && topLevel.Name == "Object";
+            WriteBaseTypeAndInterfaces(
+                isSystemObject ? null : metadataClass.BaseType,
+                metadataClass.InterfaceImplementations,
+                currentNamespace);
+
             WriteGenericConstraints(metadataClass.GenericTypeParameters, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataClass, defaultMemberAttribute.Result, currentNamespace);
@@ -1180,6 +1183,7 @@ namespace ApiContractGenerator
 
             writer.Write("struct ");
             WriteTypeNameAndGenericSignature(metadataStruct, currentNamespace, declaringTypeNumGenericParameters);
+            WriteBaseTypeAndInterfaces(null, metadataStruct.InterfaceImplementations, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataStruct, defaultMemberAttribute.Result, currentNamespace);
         }
@@ -1194,7 +1198,7 @@ namespace ApiContractGenerator
             WriteVisibility(metadataInterface.Visibility);
             writer.Write("interface ");
             WriteTypeNameAndGenericSignature(metadataInterface, currentNamespace, declaringTypeNumGenericParameters);
-            WriteBaseTypeAndInterfaces(metadataInterface, currentNamespace);
+            WriteBaseTypeAndInterfaces(metadataInterface.BaseType, metadataInterface.InterfaceImplementations, currentNamespace);
             writer.WriteLine();
             WriteTypeMembers(metadataInterface, defaultMemberAttribute.Result, currentNamespace);
         }

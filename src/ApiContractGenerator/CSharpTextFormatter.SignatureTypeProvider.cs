@@ -80,7 +80,7 @@ namespace ApiContractGenerator
 
             private static ImmutableNode<string> BuildNameWithArity(string rawName)
             {
-                var (name, arity) = ParseGenericArity(rawName);
+                var (name, arity) = NameUtils.ParseGenericArity(rawName);
 
                 var arityBuilder = (ImmutableNode<string>)null;
                 if (arity != 0)
@@ -169,7 +169,7 @@ namespace ApiContractGenerator
 
                 void BuildNext(string typeName)
                 {
-                    var (name, arity) = ParseGenericArity(typeName);
+                    var (name, arity) = NameUtils.ParseGenericArity(typeName);
                     if (arity != 0)
                     {
                         if (argumentsLeft < arity) throw new InvalidOperationException("Number of generic arguments provided does not match combined type arity.");

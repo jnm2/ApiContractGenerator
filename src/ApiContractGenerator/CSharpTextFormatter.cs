@@ -75,7 +75,7 @@ namespace ApiContractGenerator
             }
 
             var isFirst = true;
-            foreach (var type in metadataNamespace.Types.OrderBy(_ => _.Name))
+            foreach (var type in metadataNamespace.Types.OrderBy(_ => _.Name, GenericAwareNameComparer.Instance))
             {
                 if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(type, metadataNamespace.Name, declaringTypeNumGenericParameters: 0);
@@ -947,7 +947,7 @@ namespace ApiContractGenerator
 
             if (metadataMethod.Name == ".ctor")
             {
-                writer.Write(ParseGenericArity(declaringType.Name).name);
+                writer.Write(NameUtils.ParseGenericArity(declaringType.Name).name);
             }
             else
             {
@@ -1047,7 +1047,8 @@ namespace ApiContractGenerator
             foreach (var method in unusedMethods
                 .OrderByDescending(_ => _.IsStatic)
                 .ThenByDescending(_ => _.Name == ".ctor")
-                .ThenBy(_ => _.Name))
+                .ThenBy(_ => _.Name)
+                .ThenBy(_ => _.GenericTypeParameters.Count))
             {
                 if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(method, metadataType, currentNamespace);
@@ -1060,7 +1061,7 @@ namespace ApiContractGenerator
                 Write(@operator, metadataType, currentNamespace);
             }
 
-            foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name))
+            foreach (var nestedType in metadataType.NestedTypes.OrderBy(_ => _.Name, GenericAwareNameComparer.Instance))
             {
                 if (isFirst) isFirst = false; else WriteLineSpacing();
                 Write(nestedType, currentNamespace, metadataType.GenericTypeParameters.Count);
@@ -1676,12 +1677,6 @@ namespace ApiContractGenerator
                 Write(parts.Prev);
                 writer.Write(parts.Value);
             }
-        }
-
-        private static (string name, int arity) ParseGenericArity(string typeName)
-        {
-            var index = typeName.LastIndexOf('`');
-            return index == -1 ? (typeName, 0) : (typeName.Substring(0, index), int.Parse(typeName.Substring(index + 1)));
         }
     }
 }

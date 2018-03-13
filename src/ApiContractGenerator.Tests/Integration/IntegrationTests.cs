@@ -5,7 +5,9 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using System.Text;
+using ApiContractGenerator.AssemblyReferenceResolvers;
 using ApiContractGenerator.Tests.Utils;
+using Microsoft.CodeAnalysis;
 using NUnit.Framework.Constraints;
 
 namespace ApiContractGenerator.Tests.Integration
@@ -33,6 +35,7 @@ namespace ApiContractGenerator.Tests.Integration
             private readonly ApiContractGenerator generator = new ApiContractGenerator { WriteAssemblyMetadata = false };
             private readonly string expected;
             private bool isVisualBasic;
+            private IAssemblyReferenceResolver assemblyResolver;
 
             public ContractConstraint SourceIsVisualBasic
             {
@@ -58,6 +61,12 @@ namespace ApiContractGenerator.Tests.Integration
                 return this;
             }
 
+            public ContractConstraint WithAssemblyResolver(IAssemblyReferenceResolver assemblyResolver)
+            {
+                this.assemblyResolver = assemblyResolver;
+                return this;
+            }
+
             public ContractConstraint(string expected)
             {
                 this.expected = expected;
@@ -70,8 +79,17 @@ namespace ApiContractGenerator.Tests.Integration
                 {
                     case string sourceCode:
                         actualContract = isVisualBasic
-                            ? AssemblyUtils.GenerateContract(generator, sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest)
-                            : AssemblyUtils.GenerateContract(generator, sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest);
+                            ? AssemblyUtils.GenerateContract(generator, sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion.Latest, assemblyResolver)
+                            : AssemblyUtils.GenerateContract(generator, sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest, assemblyResolver);
+                        break;
+
+                    case Compilation compilation:
+                        using (var stream = new MemoryStream())
+                        {
+                            AssemblyUtils.EmitCompilation(compilation, stream);
+                            stream.Seek(0, SeekOrigin.Begin);
+                            actualContract = AssemblyUtils.GenerateContract(generator, stream, assemblyResolver);
+                        }
                         break;
 
                     case MetadataBuilder metadataBuilder:
@@ -85,7 +103,7 @@ namespace ApiContractGenerator.Tests.Integration
                         peBuilder.Serialize(blobBuilder);
 
                         using (var stream = new MemoryStream(blobBuilder.ToArray(), writable: false))
-                            actualContract = AssemblyUtils.GenerateContract(generator, stream);
+                            actualContract = AssemblyUtils.GenerateContract(generator, stream, assemblyResolver);
                         break;
 
                     default:

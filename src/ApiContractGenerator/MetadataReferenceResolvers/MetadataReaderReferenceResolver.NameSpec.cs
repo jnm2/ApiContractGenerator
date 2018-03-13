@@ -11,15 +11,15 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
         [DebuggerDisplay("{ToString(),nq}")]
         private struct NameSpec : IEquatable<NameSpec>
         {
-            private readonly string @namespace;
-            private readonly string topLevelName;
-            private readonly string[] nestedNames;
+            public string Namespace { get; }
+            public string TopLevelName { get; }
+            public string[] NestedNames { get; }
 
             public NameSpec(string @namespace, string topLevelName, string[] nestedNames)
             {
-                this.@namespace = @namespace;
-                this.topLevelName = topLevelName;
-                this.nestedNames = nestedNames != null && nestedNames.Length != 0 ? nestedNames : null;
+                Namespace = @namespace;
+                TopLevelName = topLevelName;
+                NestedNames = nestedNames != null && nestedNames.Length != 0 ? nestedNames : null;
             }
 
             public static (MetadataAssemblyReference assemblyReference, NameSpec typeName) FromMetadataTypeReference(MetadataTypeReference typeReference)
@@ -49,17 +49,17 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
 
             public bool Equals(NameSpec other)
             {
-                if (!(string.Equals(@namespace, other.@namespace)
-                      && string.Equals(topLevelName, other.topLevelName)))
+                if (!(string.Equals(Namespace, other.Namespace)
+                      && string.Equals(TopLevelName, other.TopLevelName)))
                 {
                     return false;
                 }
 
-                if (nestedNames == null || other.nestedNames == null) return nestedNames == other.nestedNames;
-                if (nestedNames.Length != other.nestedNames.Length) return false;
+                if (NestedNames == null || other.NestedNames == null) return NestedNames == other.NestedNames;
+                if (NestedNames.Length != other.NestedNames.Length) return false;
 
-                for (var i = 0; i < nestedNames.Length; i++)
-                    if (nestedNames[i] != other.nestedNames[i])
+                for (var i = 0; i < NestedNames.Length; i++)
+                    if (NestedNames[i] != other.NestedNames[i])
                         return false;
 
                 return true;
@@ -75,9 +75,9 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             {
                 unchecked
                 {
-                    var hashCode = @namespace != null ? @namespace.GetHashCode() : 0;
-                    hashCode = (hashCode * 397) ^ (topLevelName != null ? topLevelName.GetHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ (nestedNames != null ? nestedNames.Length : 0);
+                    var hashCode = Namespace != null ? Namespace.GetHashCode() : 0;
+                    hashCode = (hashCode * 397) ^ (TopLevelName != null ? TopLevelName.GetHashCode() : 0);
+                    hashCode = (hashCode * 397) ^ (NestedNames != null ? NestedNames.Length : 0);
                     return hashCode;
                 }
             }
@@ -86,13 +86,13 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             {
                 var sb = new StringBuilder();
 
-                if (!string.IsNullOrEmpty(@namespace))
-                    sb.Append(@namespace).Append('.');
+                if (!string.IsNullOrEmpty(Namespace))
+                    sb.Append(Namespace).Append('.');
 
-                sb.Append(topLevelName);
+                sb.Append(TopLevelName);
 
-                if (nestedNames != null)
-                    foreach (var nestedName in nestedNames)
+                if (NestedNames != null)
+                    foreach (var nestedName in NestedNames)
                         sb.Append('+').Append(nestedName);
 
                 return sb.ToString();

@@ -1,4 +1,4 @@
-<Project TreatAsLocalProperty="TasksDirectory">
+<Project TreatAsLocalProperty="TasksDirectory" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
     <TasksDirectory Condition=" '$(MSBuildRuntimeType)' == 'Core' ">$(MSBuildThisFileDirectory)..\tasks\netstandard1.6\</TasksDirectory>

@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using ApiContractGenerator.Model;
+using ApiContractGenerator.Model.TypeReferences;
 
 namespace ApiContractGenerator.MetadataReferenceResolvers
 {
@@ -16,6 +17,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
             private readonly MetadataReader reader;
             private TypeDefinitionHandleCollection.Enumerator enumerator;
             private readonly Dictionary<NameSpec, CachedInfo> cache = new Dictionary<NameSpec, CachedInfo>();
+            private Dictionary<NameSpec, AssemblyReferenceHandle> assemblyReferencesByForwardedType;
             private bool entirelyLoaded;
 
             public AssemblyLazyLoader(Stream stream)
@@ -30,12 +32,19 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 peReader.Dispose();
             }
 
-            public bool TryGetInfo(NameSpec name, out CachedInfo info)
+            public bool TryGetInfo(NameSpec name, MetadataReaderReferenceResolver forwardedTypeResolver, out CachedInfo info)
             {
                 if (cache.TryGetValue(name, out info))
                     return true;
 
                 if (entirelyLoaded) return false;
+
+                var forwardedReference = GetTypeReferenceForForwardedType(name);
+                if (forwardedReference != null && forwardedTypeResolver.TryGetCachedInfo(forwardedReference, out info))
+                {
+                    cache.Add(name, info);
+                    return true;
+                }
 
                 while (enumerator.MoveNext())
                 {
@@ -66,6 +75,50 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 peReader.Dispose();
                 entirelyLoaded = true;
                 return false;
+            }
+
+            private MetadataTypeReference GetTypeReferenceForForwardedType(NameSpec fullName)
+            {
+                if (assemblyReferencesByForwardedType == null)
+                {
+                    assemblyReferencesByForwardedType = new Dictionary<NameSpec, AssemblyReferenceHandle>();
+
+                    foreach (var handle in reader.ExportedTypes)
+                    {
+                        var exportedType = reader.GetExportedType(handle);
+                        if (!exportedType.IsForwarder) continue;
+
+                        if (exportedType.Implementation.Kind != HandleKind.AssemblyReference)
+                        {
+                            throw new NotImplementedException(exportedType.Implementation.Kind.ToString());
+                        }
+
+                        assemblyReferencesByForwardedType.Add(
+                            new NameSpec(
+                                reader.GetString(exportedType.Namespace),
+                                reader.GetString(exportedType.Name),
+                                nestedNames: null),
+                            (AssemblyReferenceHandle)exportedType.Implementation);
+                    }
+                }
+
+                if (assemblyReferencesByForwardedType.TryGetValue(new NameSpec(fullName.Namespace, fullName.TopLevelName, null), out var assemblyReferenceHandle))
+                {
+                    var current = (MetadataTypeReference)new TopLevelTypeReference(
+                        reader
+                            .GetAssemblyReference(assemblyReferenceHandle)
+                            .GetAssemblyName(reader),
+                        fullName.Namespace,
+                        fullName.TopLevelName);
+
+                    if (fullName.NestedNames != null)
+                        foreach (var nestedName in fullName.NestedNames)
+                            current = new NestedTypeReference(current, nestedName);
+
+                    return current;
+                }
+
+                return null;
             }
 
             private CachedInfo GetInfo(TypeDefinition definition)

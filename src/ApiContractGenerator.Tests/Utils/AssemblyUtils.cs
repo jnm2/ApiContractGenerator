@@ -13,10 +13,12 @@ namespace ApiContractGenerator.Tests.Utils
 {
     public static class AssemblyUtils
     {
+        internal static readonly MetadataReference CorlibReference = MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location);
+
         // Cached for performance
         private static readonly MetadataReference[] MetadataReferences =
         {
-            MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
+            CorlibReference,
             MetadataReference.CreateFromFile(typeof(System.CodeDom.Compiler.GeneratedCodeAttribute).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(System.Diagnostics.DebuggerStepperBoundaryAttribute).GetTypeInfo().Assembly.Location),
             MetadataReference.CreateFromFile(typeof(System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute).GetTypeInfo().Assembly.Location)
@@ -43,24 +45,21 @@ namespace ApiContractGenerator.Tests.Utils
 
         public static void EmitCompilation(string sourceCode, Stream target, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
         {
-            if (target == null) throw new ArgumentNullException(nameof(target));
-
-            var compilation = BaseCSharpCompilation.Value.AddSyntaxTrees(CSharpSyntaxTree.ParseText(sourceCode, new CSharpParseOptions(languageVersion)));
-
-            var emitResult = compilation.Emit(target);
-
-            if (!emitResult.Success)
-            {
-                throw new InvalidOperationException(
-                    "Code does not compile: " + string.Concat(emitResult.Diagnostics.Select(d => Environment.NewLine + d.GetMessage())));
-            }
+            EmitCompilation(
+                BaseCSharpCompilation.Value.AddSyntaxTrees(CSharpSyntaxTree.ParseText(sourceCode, new CSharpParseOptions(languageVersion))),
+                target);
         }
 
         public static void EmitCompilation(string sourceCode, Stream target, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion)
         {
-            if (target == null) throw new ArgumentNullException(nameof(target));
+            EmitCompilation(
+                BaseVisualBasicCompilation.Value.AddSyntaxTrees(VisualBasicSyntaxTree.ParseText(sourceCode, new VisualBasicParseOptions(languageVersion))),
+                target);
+        }
 
-            var compilation = BaseVisualBasicCompilation.Value.AddSyntaxTrees(VisualBasicSyntaxTree.ParseText(sourceCode, new VisualBasicParseOptions(languageVersion)));
+        public static void EmitCompilation(Compilation compilation, Stream target)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
 
             var emitResult = compilation.Emit(target);
 
@@ -71,37 +70,37 @@ namespace ApiContractGenerator.Tests.Utils
             }
         }
 
-        public static string GenerateContract(ApiContractGenerator generator, MemoryStream peStream)
+        public static string GenerateContract(ApiContractGenerator generator, MemoryStream peStream, IAssemblyReferenceResolver assemblyResolver = null)
         {
             using (var writer = new StringWriter())
             {
-                return GenerateContract(generator, writer, peStream);
+                return GenerateContract(generator, writer, peStream, assemblyResolver);
             }
         }
 
-        public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion)
+        public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion, IAssemblyReferenceResolver assemblyResolver = null)
         {
             using (var stream = new MemoryStream())
             {
                 EmitCompilation(sourceCode, stream, languageVersion);
-                return GenerateContract(generator, stream);
+                return GenerateContract(generator, stream, assemblyResolver);
             }
         }
 
-        public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion)
+        public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion, IAssemblyReferenceResolver assemblyResolver = null)
         {
             using (var stream = new MemoryStream())
             {
                 EmitCompilation(sourceCode, stream, languageVersion);
-                return GenerateContract(generator, stream);
+                return GenerateContract(generator, stream, assemblyResolver);
             }
         }
 
-        private static string GenerateContract(ApiContractGenerator generator, StringWriter writer, MemoryStream assemblyStream)
+        private static string GenerateContract(ApiContractGenerator generator, StringWriter writer, MemoryStream assemblyStream, IAssemblyReferenceResolver assemblyResolver = null)
         {
             assemblyStream.Seek(0, SeekOrigin.Begin);
 
-            var assemblyResolver = new CompositeAssemblyReferenceResolver(
+            if (assemblyResolver == null) assemblyResolver = new CompositeAssemblyReferenceResolver(
                 new GacAssemblyReferenceResolver(),
                 new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(typeof(object).GetTypeInfo().Assembly.Location)));
 

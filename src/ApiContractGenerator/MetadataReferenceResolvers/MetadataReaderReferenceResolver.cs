@@ -65,7 +65,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 if (currentAssemblyLoader == null)
                     currentAssemblyLoader = new AssemblyLazyLoader(currentAssemblyStreamFactory.Invoke());
 
-                if (currentAssemblyLoader.TryGetInfo(typeName, out cachedInfo))
+                if (currentAssemblyLoader.TryGetInfo(typeName, this, out cachedInfo))
                     return true;
 
                 // Attribute values containing enum type references serialize the string.
@@ -92,7 +92,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
                 return false;
             }
 
-            return loader.TryGetInfo(typeName, out cachedInfo);
+            return loader.TryGetInfo(typeName, this, out cachedInfo);
         }
 
         private static MetadataAssemblyReference GetMscorlibReference(Stream assemblyStream)

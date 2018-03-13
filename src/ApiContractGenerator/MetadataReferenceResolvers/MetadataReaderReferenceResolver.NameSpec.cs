@@ -9,7 +9,7 @@ namespace ApiContractGenerator.MetadataReferenceResolvers
     public sealed partial class MetadataReaderReferenceResolver
     {
         [DebuggerDisplay("{ToString(),nq}")]
-        private struct NameSpec : IEquatable<NameSpec>
+        private readonly struct NameSpec : IEquatable<NameSpec>
         {
             public string Namespace { get; }
             public string TopLevelName { get; }

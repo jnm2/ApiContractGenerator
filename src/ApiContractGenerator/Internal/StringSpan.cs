@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace ApiContractGenerator.Internal
 {
     [DebuggerDisplay("{ToString()}")]
-    public struct StringSpan
+    public readonly struct StringSpan
     {
         private readonly string value;
         private readonly int start;

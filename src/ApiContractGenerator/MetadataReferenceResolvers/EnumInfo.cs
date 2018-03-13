@@ -4,7 +4,7 @@ using System.Reflection.Metadata;
 
 namespace ApiContractGenerator.MetadataReferenceResolvers
 {
-    public struct EnumInfo
+    public readonly struct EnumInfo
     {
         public EnumInfo(bool isFlags, PrimitiveTypeCode underlyingType, IReadOnlyList<EnumFieldInfo> sortedFields)
         {

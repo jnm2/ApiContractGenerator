@@ -6,7 +6,7 @@ namespace ApiContractGenerator.Source
 {
     public sealed partial class MetadataReaderSource
     {
-        private struct GenericContext
+        private readonly struct GenericContext
         {
             public readonly IMetadataGenericTypeParameter[] TypeParameters;
             public readonly IMetadataGenericTypeParameter[] MethodParameters;

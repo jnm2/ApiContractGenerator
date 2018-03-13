@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 namespace ApiContractGenerator.AssemblyReferenceResolvers
 {
     [DebuggerDisplay("{ToString(),nq}")]
-    internal struct HResult : IEquatable<HResult>
+    internal readonly struct HResult : IEquatable<HResult>
     {
         public static readonly HResult Ok = (HResult)0;
         public static readonly HResult False = (HResult)1;

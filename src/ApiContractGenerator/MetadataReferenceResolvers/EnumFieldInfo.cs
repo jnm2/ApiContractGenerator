@@ -5,7 +5,7 @@ using ApiContractGenerator.Model;
 namespace ApiContractGenerator.MetadataReferenceResolvers
 {
     [DebuggerDisplay("{ToString(),nq}")]
-    public struct EnumFieldInfo : IComparable<EnumFieldInfo>
+    public readonly struct EnumFieldInfo : IComparable<EnumFieldInfo>
     {
         public EnumFieldInfo(string name, IMetadataConstantValue value)
         {

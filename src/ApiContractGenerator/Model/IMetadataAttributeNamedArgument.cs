@@ -3,7 +3,7 @@ using ApiContractGenerator.Model.AttributeValues;
 
 namespace ApiContractGenerator.Model
 {
-    public struct MetadataAttributeNamedArgument
+    public readonly struct MetadataAttributeNamedArgument
     {
         public MetadataAttributeNamedArgument(string name, MetadataAttributeValue value)
         {

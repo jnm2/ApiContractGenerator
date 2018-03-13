@@ -1,10 +1,8 @@
-using ApiContractGenerator.Model;
-
 namespace ApiContractGenerator.MetadataReferenceResolvers
 {
     public sealed partial class MetadataReaderReferenceResolver
     {
-        private struct CachedInfo
+        private readonly struct CachedInfo
         {
             public readonly bool IsValueType;
             public readonly bool IsDelegateType;

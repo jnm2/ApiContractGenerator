@@ -14,12 +14,9 @@ Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
     {
-        foreach (var testProject in GetFiles("src/**/*.Tests.csproj"))
-            DotNetCoreTest(testProject.FullPath, new DotNetCoreTestSettings
-            {
-                Configuration = configuration,
-                NoBuild = true
-            });
+        var runner = DefaultTestRunner(configuration);
+        AddAltCover(runner);
+        runner.Run();
     });
 
 Task("Pack")

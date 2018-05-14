@@ -1,17 +1,14 @@
+#load lib.cake
+
 var configuration = Argument("configuration", "Release");
 
 var packDir = Directory("pub");
 
-Task("Restore")
-    .Does(() => MSBuild("src", settings => settings.SetConfiguration(configuration).WithTarget("Restore")));
-
-Task("Clean")
-    .IsDependentOn("Restore")
-    .Does(() => MSBuild("src", settings => settings.SetConfiguration(configuration).WithTarget("Clean")));
+Task("Clean").Does(() => DefaultClean());
 
 Task("Build")
     .IsDependentOn("Clean")
-    .Does(() => MSBuild("src", settings => settings.SetConfiguration(configuration).WithTarget("Build")));
+    .Does(() => MSBuild("src", DefaultMSBuildSettings().WithTarget("Build").WithRestore()));
 
 Task("Test")
     .IsDependentOn("Build")
@@ -27,7 +24,7 @@ Task("Test")
 
 Task("Pack")
     .IsDependentOn("Test")
-    .Does(() => MSBuild("src/ApiContractGenerator.MSBuild", settings => settings.SetConfiguration(configuration)
+    .Does(() => MSBuild("src/ApiContractGenerator.MSBuild", DefaultMSBuildSettings()
         .WithTarget("Pack")
         .WithProperty("PackageOutputPath", "\"" + MakeAbsolute(packDir) + "\"")));
 

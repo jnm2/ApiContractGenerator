@@ -7,7 +7,7 @@ namespace ApiContractGenerator.Tests.Integration
         [Test]
         public static void Finalizer_is_not_shown()
         {
-            Assert.That("public class Test { ~Test() { } }", HasContract(
+            Assert.That("public class Test { private Test() { } ~Test() { } }", HasContract(
                 "public class Test",
                 "{",
                 "}"));

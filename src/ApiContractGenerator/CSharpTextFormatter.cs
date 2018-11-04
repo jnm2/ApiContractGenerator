@@ -1011,7 +1011,7 @@ namespace ApiContractGenerator
                 }
             }
 
-            var unusedMethods = new HashSet<IMetadataMethod>(metadataType.Methods);
+            var unusedMethods = new HashSet<IMetadataMethod>(metadataType.Methods.Where(m => !IsFinalizer(m)));
 
             foreach (var property in metadataType.Properties
                 .OrderByDescending(_ => (_.GetAccessor ?? _.SetAccessor).IsStatic)
@@ -1069,6 +1069,12 @@ namespace ApiContractGenerator
 
             writer.Unindent();
             writer.WriteLine('}');
+        }
+
+        private static bool IsFinalizer(IMetadataMethod method)
+        {
+            // Technically should check whether the overridden method chain ends with object.Finalizer or a shadowing virtual Finalize method.
+            return method.IsOverride && method.Name == "Finalize";
         }
 
         private void WriteBaseTypeAndInterfaces(MetadataTypeReference baseType, IReadOnlyList<MetadataTypeReference> interfaceImplementations, string currentNamespace)

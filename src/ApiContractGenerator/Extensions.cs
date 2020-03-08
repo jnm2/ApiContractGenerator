@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reflection;
 using System.Reflection.Metadata;
 using ApiContractGenerator.Model.TypeReferences;
@@ -9,6 +11,23 @@ namespace ApiContractGenerator
     // This is fine so long as the class itself is internal.
     internal static class Extensions
     {
+        public static ImmutableHashSet<T> IntersectAll<T>(this IEnumerable<IEnumerable<T>> source, IEqualityComparer<T> comparer = null)
+        {
+            using var enumerator = source.GetEnumerator();
+
+            if (!enumerator.MoveNext()) return ImmutableHashSet<T>.Empty;
+
+            var builder = ImmutableHashSet.CreateBuilder(comparer);
+
+            foreach (var value in enumerator.Current)
+                builder.Add(value);
+
+            while (enumerator.MoveNext())
+                builder.IntersectWith(enumerator.Current);
+
+            return builder.ToImmutable();
+        }
+
         public static MetadataAssemblyReference GetAssemblyName(this AssemblyReference reference, MetadataReader reader)
         {
             return new ReaderMetadataAssemblyReference(

@@ -15,6 +15,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Framework" Version="15.5.180" />
     <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
+    <PackageReference Update="Microsoft.Build.Framework" Version="16.4.0" />
 
     <ProjectReference Include="..\ApiContractGenerator\ApiContractGenerator.csproj" PrivateAssets="All" />
   </ItemGroup>

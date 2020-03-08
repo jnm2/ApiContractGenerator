@@ -64,108 +64,104 @@ namespace ApiContractGenerator.Tests.Integration
         [Test]
         public static void Type_forwarded_twice()
         {
-            using (var temp = new TempDirectory())
+            using var temp = new TempDirectory();
+            var baseCompilation = CSharpCompilation.Create(null, options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+.AddReferences(AssemblyUtils.CorlibReference);
+
+            var enumDeclaration = CSharpSyntaxTree.ParseText("public enum ForwardedType { SomeValue = 1 }");
+            var typeForwardDeclaration = CSharpSyntaxTree.ParseText("[assembly: System.Runtime.CompilerServices.TypeForwardedToAttribute(typeof(ForwardedType))]");
+
+            var pathA = Path.Combine(temp, "a.dll");
+            using (var fileA = File.Create(pathA))
             {
-                var baseCompilation = CSharpCompilation.Create(null, options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-                    .AddReferences(AssemblyUtils.CorlibReference);
-
-                var enumDeclaration = CSharpSyntaxTree.ParseText("public enum ForwardedType { SomeValue = 1 }");
-                var typeForwardDeclaration = CSharpSyntaxTree.ParseText("[assembly: System.Runtime.CompilerServices.TypeForwardedToAttribute(typeof(ForwardedType))]");
-
-                var pathA = Path.Combine(temp, "a.dll");
-                using (var fileA = File.Create(pathA))
-                {
-                    AssemblyUtils.EmitCompilation(
-                        baseCompilation.WithAssemblyName("A").AddSyntaxTrees(enumDeclaration),
-                        fileA);
-                }
-
-                var pathB = Path.Combine(temp, "b.dll");
-                using (var fileB = File.Create(pathB))
-                {
-                    AssemblyUtils.EmitCompilation(
-                        baseCompilation
-                            .WithAssemblyName("B")
-                            .AddReferences(MetadataReference.CreateFromFile(pathA))
-                            .AddSyntaxTrees(typeForwardDeclaration),
-                        fileB);
-                }
-
-                var originalB = baseCompilation
-                    .WithAssemblyName("B")
-                    .AddSyntaxTrees(enumDeclaration);
-
-                var pathC = Path.Combine(temp, "c.dll");
-                using (var fileC = File.Create(pathC))
-                {
-                    AssemblyUtils.EmitCompilation(
-                        baseCompilation
-                            .WithAssemblyName("C")
-                            .AddReferences(originalB.ToMetadataReference())
-                            .AddSyntaxTrees(typeForwardDeclaration),
-                        fileC);
-                }
-
-                var originalC = baseCompilation
-                    .WithAssemblyName("C")
-                    .AddSyntaxTrees(enumDeclaration);
-
-                Assert.That(baseCompilation
-                        .AddReferences(originalC.ToMetadataReference())
-                        .AddSyntaxTrees(CSharpSyntaxTree.ParseText("public static class Test { public const ForwardedType Value = ForwardedType.SomeValue; }")),
-                    HasContract(
-                        "public static class Test",
-                        "{",
-                        "    public const ForwardedType Value = ForwardedType.SomeValue;",
-                        "}"
-                    ).WithAssemblyResolver(new SameDirectoryAssemblyReferenceResolver(temp)));
+                AssemblyUtils.EmitCompilation(
+                    baseCompilation.WithAssemblyName("A").AddSyntaxTrees(enumDeclaration),
+                    fileA);
             }
+
+            var pathB = Path.Combine(temp, "b.dll");
+            using (var fileB = File.Create(pathB))
+            {
+                AssemblyUtils.EmitCompilation(
+                    baseCompilation
+                        .WithAssemblyName("B")
+                        .AddReferences(MetadataReference.CreateFromFile(pathA))
+                        .AddSyntaxTrees(typeForwardDeclaration),
+                    fileB);
+            }
+
+            var originalB = baseCompilation
+                .WithAssemblyName("B")
+                .AddSyntaxTrees(enumDeclaration);
+
+            var pathC = Path.Combine(temp, "c.dll");
+            using (var fileC = File.Create(pathC))
+            {
+                AssemblyUtils.EmitCompilation(
+                    baseCompilation
+                        .WithAssemblyName("C")
+                        .AddReferences(originalB.ToMetadataReference())
+                        .AddSyntaxTrees(typeForwardDeclaration),
+                    fileC);
+            }
+
+            var originalC = baseCompilation
+                .WithAssemblyName("C")
+                .AddSyntaxTrees(enumDeclaration);
+
+            Assert.That(baseCompilation
+                    .AddReferences(originalC.ToMetadataReference())
+                    .AddSyntaxTrees(CSharpSyntaxTree.ParseText("public static class Test { public const ForwardedType Value = ForwardedType.SomeValue; }")),
+                HasContract(
+                    "public static class Test",
+                    "{",
+                    "    public const ForwardedType Value = ForwardedType.SomeValue;",
+                    "}"
+                ).WithAssemblyResolver(new SameDirectoryAssemblyReferenceResolver(temp)));
         }
 
         [Test]
         public static void Nested_type_forward()
         {
-            using (var temp = new TempDirectory())
+            using var temp = new TempDirectory();
+            var baseCompilation = CSharpCompilation.Create(null, options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+.AddReferences(AssemblyUtils.CorlibReference);
+
+            var enumDeclaration = CSharpSyntaxTree.ParseText("public static class SomeClass { public enum ForwardedType { SomeValue = 1 } }");
+            var typeForwardDeclaration = CSharpSyntaxTree.ParseText("[assembly: System.Runtime.CompilerServices.TypeForwardedToAttribute(typeof(SomeClass))]");
+
+            var pathA = Path.Combine(temp, "a.dll");
+            using (var fileA = File.Create(pathA))
             {
-                var baseCompilation = CSharpCompilation.Create(null, options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
-                    .AddReferences(AssemblyUtils.CorlibReference);
-
-                var enumDeclaration = CSharpSyntaxTree.ParseText("public static class SomeClass { public enum ForwardedType { SomeValue = 1 } }");
-                var typeForwardDeclaration = CSharpSyntaxTree.ParseText("[assembly: System.Runtime.CompilerServices.TypeForwardedToAttribute(typeof(SomeClass))]");
-
-                var pathA = Path.Combine(temp, "a.dll");
-                using (var fileA = File.Create(pathA))
-                {
-                    AssemblyUtils.EmitCompilation(
-                        baseCompilation.WithAssemblyName("A").AddSyntaxTrees(enumDeclaration),
-                        fileA);
-                }
-
-                var pathB = Path.Combine(temp, "b.dll");
-                using (var fileB = File.Create(pathB))
-                {
-                    AssemblyUtils.EmitCompilation(
-                        baseCompilation
-                            .WithAssemblyName("B")
-                            .AddReferences(MetadataReference.CreateFromFile(pathA))
-                            .AddSyntaxTrees(typeForwardDeclaration),
-                        fileB);
-                }
-
-                var originalB = baseCompilation
-                    .WithAssemblyName("B")
-                    .AddSyntaxTrees(enumDeclaration);
-
-                Assert.That(baseCompilation
-                    .AddReferences(originalB.ToMetadataReference())
-                    .AddSyntaxTrees(CSharpSyntaxTree.ParseText("public static class Test { public const SomeClass.ForwardedType Value = SomeClass.ForwardedType.SomeValue; }")),
-                    HasContract(
-                        "public static class Test",
-                        "{",
-                        "    public const SomeClass.ForwardedType Value = SomeClass.ForwardedType.SomeValue;",
-                        "}"
-                    ).WithAssemblyResolver(new SameDirectoryAssemblyReferenceResolver(temp)));
+                AssemblyUtils.EmitCompilation(
+                    baseCompilation.WithAssemblyName("A").AddSyntaxTrees(enumDeclaration),
+                    fileA);
             }
+
+            var pathB = Path.Combine(temp, "b.dll");
+            using (var fileB = File.Create(pathB))
+            {
+                AssemblyUtils.EmitCompilation(
+                    baseCompilation
+                        .WithAssemblyName("B")
+                        .AddReferences(MetadataReference.CreateFromFile(pathA))
+                        .AddSyntaxTrees(typeForwardDeclaration),
+                    fileB);
+            }
+
+            var originalB = baseCompilation
+                .WithAssemblyName("B")
+                .AddSyntaxTrees(enumDeclaration);
+
+            Assert.That(baseCompilation
+                .AddReferences(originalB.ToMetadataReference())
+                .AddSyntaxTrees(CSharpSyntaxTree.ParseText("public static class Test { public const SomeClass.ForwardedType Value = SomeClass.ForwardedType.SomeValue; }")),
+                HasContract(
+                    "public static class Test",
+                    "{",
+                    "    public const SomeClass.ForwardedType Value = SomeClass.ForwardedType.SomeValue;",
+                    "}"
+                ).WithAssemblyResolver(new SameDirectoryAssemblyReferenceResolver(temp)));
         }
     }
 }

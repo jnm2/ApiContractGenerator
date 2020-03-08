@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Common.props" />
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.6;net46</TargetFrameworks>
-    <LangVersion>latest</LangVersion>
+    <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
 
     <DevelopmentDependency>true</DevelopmentDependency>
     <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
@@ -17,6 +15,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Build.Framework" Version="15.5.180" />
     <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
+    <PackageReference Update="Microsoft.Build.Framework" Version="16.4.0" />
 
     <ProjectReference Include="..\ApiContractGenerator\ApiContractGenerator.csproj" PrivateAssets="All" />
   </ItemGroup>

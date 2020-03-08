@@ -72,28 +72,22 @@ namespace ApiContractGenerator.Tests.Utils
 
         public static string GenerateContract(ApiContractGenerator generator, MemoryStream peStream, IAssemblyReferenceResolver assemblyResolver = null)
         {
-            using (var writer = new StringWriter())
-            {
-                return GenerateContract(generator, writer, peStream, assemblyResolver);
-            }
+            using var writer = new StringWriter();
+            return GenerateContract(generator, writer, peStream, assemblyResolver);
         }
 
         public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.CSharp.LanguageVersion languageVersion, IAssemblyReferenceResolver assemblyResolver = null)
         {
-            using (var stream = new MemoryStream())
-            {
-                EmitCompilation(sourceCode, stream, languageVersion);
-                return GenerateContract(generator, stream, assemblyResolver);
-            }
+            using var stream = new MemoryStream();
+            EmitCompilation(sourceCode, stream, languageVersion);
+            return GenerateContract(generator, stream, assemblyResolver);
         }
 
         public static string GenerateContract(ApiContractGenerator generator, string sourceCode, Microsoft.CodeAnalysis.VisualBasic.LanguageVersion languageVersion, IAssemblyReferenceResolver assemblyResolver = null)
         {
-            using (var stream = new MemoryStream())
-            {
-                EmitCompilation(sourceCode, stream, languageVersion);
-                return GenerateContract(generator, stream, assemblyResolver);
-            }
+            using var stream = new MemoryStream();
+            EmitCompilation(sourceCode, stream, languageVersion);
+            return GenerateContract(generator, stream, assemblyResolver);
         }
 
         private static string GenerateContract(ApiContractGenerator generator, StringWriter writer, MemoryStream assemblyStream, IAssemblyReferenceResolver assemblyResolver = null)

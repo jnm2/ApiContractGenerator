@@ -36,10 +36,10 @@ namespace ApiContractGenerator.MSBuild
                     new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(assemblyPath)),
                     new SameDirectoryAssemblyReferenceResolver(Path.GetDirectoryName(typeof(object).GetTypeInfo().Assembly.Location)));
 
-                using (var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => File.OpenRead(assemblyPath), assemblyResolver))
-                using (var source = new MetadataReaderSource(File.OpenRead(assemblyPath), metadataReferenceResolver))
-                using (var outputFile = File.CreateText(outputPath))
-                    generator.Generate(source, metadataReferenceResolver, new CSharpTextFormatter(outputFile, metadataReferenceResolver));
+                using var metadataReferenceResolver = new MetadataReaderReferenceResolver(() => File.OpenRead(assemblyPath), assemblyResolver);
+                using var source = new MetadataReaderSource(File.OpenRead(assemblyPath), metadataReferenceResolver);
+                using var outputFile = File.CreateText(outputPath);
+                generator.Generate(source, metadataReferenceResolver, new CSharpTextFormatter(outputFile, metadataReferenceResolver));
             }
 
             return true;

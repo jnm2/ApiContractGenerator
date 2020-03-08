@@ -68,11 +68,9 @@ namespace ApiContractGenerator.Tests
         [TestCase((double)-1_000_000.1, "-1_000_000.1", TestName = "{m}((double)-1_000_000.1)")]
         public static void Decimal_literals_use_digit_separator_when_at_least_five_digits(object value, string expected)
         {
-            using (var result = new StringWriter())
-            {
-                new CSharpTextFormatter(result, null).WriteConstantPrimitive(MetadataConstantValue.FromObject(value));
-                Assert.That(result.ToString(), Is.EqualTo(expected));
-            }
+            using var result = new StringWriter();
+            new CSharpTextFormatter(result, null).WriteConstantPrimitive(MetadataConstantValue.FromObject(value));
+            Assert.That(result.ToString(), Is.EqualTo(expected));
         }
     }
 }

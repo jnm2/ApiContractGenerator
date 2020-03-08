@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator", "ApiContractGenerator\ApiContractGenerator.csproj", "{3FD9F355-D9F2-4286-AD9B-DFD48152E265}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator", "src\ApiContractGenerator\ApiContractGenerator.csproj", "{3FD9F355-D9F2-4286-AD9B-DFD48152E265}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator.Console", "ApiContractGenerator.Console\ApiContractGenerator.Console.csproj", "{DCF80689-92DB-478F-AAF7-338A5FB42311}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator.Console", "src\ApiContractGenerator.Console\ApiContractGenerator.Console.csproj", "{DCF80689-92DB-478F-AAF7-338A5FB42311}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator.Tests", "ApiContractGenerator.Tests\ApiContractGenerator.Tests.csproj", "{BFBB489E-8997-4519-81D8-8BA6DEFEB877}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator.Tests", "src\ApiContractGenerator.Tests\ApiContractGenerator.Tests.csproj", "{BFBB489E-8997-4519-81D8-8BA6DEFEB877}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator.MSBuild", "ApiContractGenerator.MSBuild\ApiContractGenerator.MSBuild.csproj", "{8789DEA9-90DA-4566-8DDC-95ABB76CEA8A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiContractGenerator.MSBuild", "src\ApiContractGenerator.MSBuild\ApiContractGenerator.MSBuild.csproj", "{8789DEA9-90DA-4566-8DDC-95ABB76CEA8A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{336BDCFD-DA91-4C7D-B59C-D932BC0C2745}"
 	ProjectSection(SolutionItems) = preProject
-		Common.props = Common.props
+		src\Common.props = src\Common.props
 	EndProjectSection
 EndProject
 Global
